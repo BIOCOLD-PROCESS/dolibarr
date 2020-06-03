@@ -1519,6 +1519,47 @@ class Invoices extends DolibarrApi
         return $paiement_id;
     }
 
+    /**
+     * Get list of direct debit of a given invoice
+     *
+     * @param int   $id             Id of invoice
+     *
+     * @url     GET {id}/directdebit
+     *
+     * @return array
+	 *
+     * @throws RestException 400
+     * @throws RestException 401
+     * @throws RestException 404
+     * @throws RestException 405
+     */
+    public function getDirectDebit($id)
+    {
+
+        if (!DolibarrApiAccess::$user->rights->facture->lire) {
+            throw new RestException(401);
+        }
+        if (empty($id)) {
+            throw new RestException(400, 'Invoice ID is mandatory');
+        }
+
+        if (!DolibarrApi::_checkAccessToResource('facture', $id)) {
+            throw new RestException(401, 'Access not allowed for login '.DolibarrApiAccess::$user->login);
+        }
+
+        $result = $this->invoice->fetch($id);
+        if (!$result) {
+            throw new RestException(404, 'Invoice not found');
+        }
+
+        $result = $this->invoice->getListOfDirectDebit();
+        if ($result < 0) {
+            throw new RestException(405, $this->invoice->error);
+        }
+
+        return $result;
+    }
+
     // phpcs:disable PEAR.NamingConventions.ValidFunctionName.PublicUnderscore
     /**
      * Clean sensible object datas

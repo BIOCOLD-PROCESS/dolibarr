@@ -378,6 +378,47 @@ abstract class CommonInvoice extends CommonObject
 		}
 	}
 
+	/**
+	 *  Return list of direct debit
+	 *
+	 *  @return     array					Array with list of direct debit
+	 */
+	public function getListOfDirectDebit()
+	{
+		$retarray = array();
+
+		$sql = "SELECT pfd.rowid, pfd.traite, pfd.date_demande as date_demande";
+		$sql .= " , pfd.date_traite as date_traite, pfd.amount,";
+		$sql .= " u.rowid as user_id, u.lastname, u.firstname, u.login";
+		$sql .= " FROM ".MAIN_DB_PREFIX."prelevement_facture_demande as pfd";
+		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."user as u on pfd.fk_user_demande = u.rowid";
+		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."prelevement_bons as pb ON pb.rowid = pfd.fk_prelevement_bons";
+		$sql .= " WHERE fk_facture = ".$this->id;
+		$sql .= " AND pfd.traite = 0";
+		$sql .= " ORDER BY pfd.date_demande DESC";
+
+		dol_syslog(get_class($this)."::getListOfDirectDebit", LOG_DEBUG);
+		$resql = $this->db->query($sql);
+		if ($resql)
+		{
+			$num = $this->db->num_rows($result);
+			$i = 0;
+			while ($i < $num)
+			{
+				$obj = $this->db->fetch_object($resql);
+				$retarray[] = array('id'=>$obj->rowid, 'user_id'=>$obj->user_id, 'amount'=>$obj->amount, 'traite'=>$obj->traite, 'date_demande'=>$obj->date_demande, 'date_traite'=>$obj->date_traite);
+				$i++;
+			}
+
+			$this->db->free($resql);
+
+			return $retarray;
+		} else {
+			$this->error = $this->db->lasterror();
+			dol_print_error($this->db);
+			return array();
+		}
+	}
 
     // phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
