@@ -1533,7 +1533,7 @@ class Invoices extends DolibarrApi
      * @throws RestException 404
      * @throws RestException 405
      */
-    public function getDirectDebit($id)
+    public function getListOfDirectDebit($id)
     {
 
         if (!DolibarrApiAccess::$user->rights->facture->lire) {
