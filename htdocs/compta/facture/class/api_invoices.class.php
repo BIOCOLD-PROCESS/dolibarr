@@ -1520,11 +1520,11 @@ class Invoices extends DolibarrApi
     }
 
     /**
-     * Get list of direct debit of a given invoice
+     * Get list of withdrawal receipt of a given invoice
      *
      * @param int   $id             Id of invoice
      *
-     * @url     GET {id}/directdebit
+     * @url     GET {id}/withdrawalReceipt
      *
      * @return array
 	 *
@@ -1533,7 +1533,7 @@ class Invoices extends DolibarrApi
      * @throws RestException 404
      * @throws RestException 405
      */
-    public function getListOfDirectDebit($id)
+    public function getListOfWithdrawalReceipt($id)
     {
 
         if (!DolibarrApiAccess::$user->rights->facture->lire) {
@@ -1552,7 +1552,7 @@ class Invoices extends DolibarrApi
             throw new RestException(404, 'Invoice not found');
         }
 
-        $result = $this->invoice->getListOfDirectDebit();
+        $result = $this->invoice->getListOfWithdrawalReceipt();
         if ($result < 0) {
             throw new RestException(405, $this->invoice->error);
         }

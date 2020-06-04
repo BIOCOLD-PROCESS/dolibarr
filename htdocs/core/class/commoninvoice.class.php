@@ -383,7 +383,7 @@ abstract class CommonInvoice extends CommonObject
 	 *
 	 *  @return     array					Array with list of direct debit
 	 */
-	public function getListOfDirectDebit()
+	public function getListOfWithdrawalReceipt()
 	{
 		$retarray = array();
 
@@ -397,7 +397,7 @@ abstract class CommonInvoice extends CommonObject
 		$sql .= " AND pfd.traite = 0";
 		$sql .= " ORDER BY pfd.date_demande DESC";
 
-		dol_syslog(get_class($this)."::getListOfDirectDebit", LOG_DEBUG);
+		dol_syslog(get_class($this)."::getListOfWithdrawalReceipt", LOG_DEBUG);
 		$resql = $this->db->query($sql);
 		if ($resql)
 		{
