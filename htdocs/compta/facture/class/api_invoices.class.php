@@ -1560,6 +1560,133 @@ class Invoices extends DolibarrApi
         return $result;
     }
 
+
+    /**
+     * Add withdrawal receipt to a specific invoice with the remain to pay as amount.
+     *
+     * @param int     $id                               Id of invoice
+     * @param float   $amount           {@from body}    Withdraw request amount
+     *
+     * @url     POST {id}/withdrawalReceipt
+     *
+     * @return int  Withdraw request ID
+	 *
+     * @throws RestException 400
+     * @throws RestException 401
+     * @throws RestException 404
+     */
+    public function addWithdrawalReceipt($id, $amount)
+    {
+        global $conf;
+
+    	require_once DOL_DOCUMENT_ROOT.'/compta/paiement/class/paiement.class.php';
+
+    	if (!DolibarrApiAccess::$user->rights->facture->creer && !DolibarrApiAccess::$user->rights->prelevement->bons->creer) {
+    		throw new RestException(403);
+    	}
+    	if (empty($id)) {
+    		throw new RestException(400, 'Invoice ID is mandatory');
+    	}
+        
+        if (!DolibarrApi::_checkAccessToResource('facture', $this->invoice->id)) {
+			throw new RestException(401, 'Access not allowed for login '.DolibarrApiAccess::$user->login);
+		}
+
+    	$result = $this->invoice->fetch($id);
+    	if (!$result) {
+    		throw new RestException(404, 'Invoice not found');
+        }
+
+
+        $pending = 0;
+
+        // How many Direct debit opened requests ?
+
+        $sql = "SELECT pfd.rowid, pfd.traite, pfd.date_demande as date_demande";
+        $sql .= " , pfd.date_traite as date_traite";
+        $sql .= " , pfd.amount";
+        $sql .= " FROM ".MAIN_DB_PREFIX."prelevement_facture_demande as pfd";
+        $sql .= " WHERE fk_facture = ".$this->invoice->id;
+        $sql .= " AND pfd.traite = 0";
+        $sql .= " ORDER BY pfd.date_demande DESC";
+
+        $result_sql = $this->db->query($sql);
+        if ($result_sql)
+        {
+            $num = $this->db->num_rows($result_sql);
+        } else {
+            dol_print_error($this->db);
+        }
+
+        // For wich amount ?
+    
+        $sql = "SELECT SUM(pfd.amount) as amount";
+        $sql .= " FROM ".MAIN_DB_PREFIX."prelevement_facture_demande as pfd";
+        $sql .= " WHERE fk_facture = ".$this->invoice->id;
+        $sql .= " AND pfd.traite = 0";
+    
+        $result_sql = $this->db->query($sql);
+        if ($result_sql)
+        {
+            $obj = $this->db->fetch_object($result_sql);
+            if ($obj) $pending = $obj->amount;
+        } else {
+            dol_print_error($this->db);
+        }
+
+        dol_syslog(get_class($this)."::num = ".$num, LOG_DEBUG);
+        dol_syslog(get_class($this)."::pending = ".$pending, LOG_DEBUG);
+
+        // Add a transfer request
+        if ($this->invoice->statut > Facture::STATUS_DRAFT && $this->invoice->paye == 0 && $num == 0)
+        {
+            // Calculate amount to pay
+            $totalpaye = $this->invoice->getSommePaiement();
+            $totalcreditnotes = $this->invoice->getSumCreditNotesUsed();
+            $totaldeposits = $this->invoice->getSumDepositsUsed();
+            $resteapayer = price2num($this->invoice->total_ttc - $totalpaye - $totalcreditnotes - $totaldeposits, 'MT');
+            
+            dol_syslog(get_class($this)."::resteapayer = ".$resteapayer, LOG_DEBUG);
+
+            if ($resteapayer > 0)
+            {
+                $remaintopaylesspendingdebit = $resteapayer - $pending;
+                dol_syslog(get_class($this)."::remaintopaylesspendingdebit = ".$remaintopaylesspendingdebit, LOG_DEBUG);
+
+                if ($this->invoice->id > 0)
+                {
+                    $this->db->begin();
+
+                    $result = $this->invoice->demande_prelevement(DolibarrApiAccess::$user, $amount);
+                    if ($result > 0)
+                    {
+                        $this->db->commit();
+
+                        dol_syslog(get_class($this)."::".$langs->trans("RecordSaved"), LOG_DEBUG);
+                    } else {
+                        $this->db->rollback();
+                        throw new RestException(400, 'Withdraw Request error : '.$this->invoice->error);
+                    }
+                }
+            } else {
+                throw new RestException(400, 'Withdraw Request error : Amount must be positive');
+            }
+        } else {
+            if ($num == 0)
+            {
+                if ($object->statut > Facture::STATUS_DRAFT) {
+                    throw new RestException(400, 'Withdraw Request error : Already paid');
+                } else {
+                    throw new RestException(400, 'Withdraw Request error : Draft');
+                }
+            } else {
+                throw new RestException(400, 'Withdraw Request error : Request already recorded');
+            }
+        }
+
+    	return $result;
+    }
+
     // phpcs:disable PEAR.NamingConventions.ValidFunctionName.PublicUnderscore
     /**
      * Clean sensible object datas
