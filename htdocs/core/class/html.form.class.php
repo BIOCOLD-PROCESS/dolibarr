@@ -2431,6 +2431,8 @@ class Form
 		$outdurationvalue = $outtype == Product::TYPE_SERVICE ?substr($objp->duration, 0, dol_strlen($objp->duration) - 1) : '';
 		$outdurationunit = $outtype == Product::TYPE_SERVICE ?substr($objp->duration, -1) : '';
 
+		if ($outorigin && !empty($conf->global->PRODUCT_SHOW_ORIGIN_IN_COMBO))  require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
+
         // Units
         $outvalUnits = '';
         if (!empty($conf->global->PRODUCT_USE_UNITS)) {
@@ -4034,18 +4036,18 @@ class Form
 	 *       print '});'."\n";
 	 *       print '</script>'."\n";
 	 *
-	 *     @param  	string		$page        	   	Url of page to call if confirmation is OK. Can contains parameters (param 'action' and 'confirm' will be reformated)
-	 *     @param	string		$title       	   	Title
-	 *     @param	string		$question    	   	Question
-	 *     @param 	string		$action      	   	Action
-	 *	   @param  	array		$formquestion	   	An array with complementary inputs to add into forms: array(array('label'=> ,'type'=> , ))
-	 *												type can be 'hidden', 'text', 'password', 'checkbox', 'radio', 'date', 'morecss', ...
-	 * 	   @param  	string		$selectedchoice  	'' or 'no', or 'yes' or '1' or '0'
-	 * 	   @param  	int|string	$useajax		   	0=No, 1=Yes, 2=Yes but submit page with &confirm=no if choice is No, 'xxx'=Yes and preoutput confirm box with div id=dialog-confirm-xxx
-	 *     @param  	int			$height          	Force height of box (0 = auto)
-	 *     @param	int			$width				Force width of box ('999' or '90%'). Ignored and forced to 90% on smartphones.
-	 *     @param	int			$disableformtag		1=Disable form tag. Can be used if we are already inside a <form> section.
-	 *     @return 	string      	    			HTML ajax code if a confirm ajax popup is required, Pure HTML code if it's an html form
+	 *     @param  	string			$page        	   	Url of page to call if confirmation is OK. Can contains parameters (param 'action' and 'confirm' will be reformated)
+	 *     @param	string			$title       	   	Title
+	 *     @param	string			$question    	   	Question
+	 *     @param 	string			$action      	   	Action
+	 *	   @param  	array|string	$formquestion	   	An array with complementary inputs to add into forms: array(array('label'=> ,'type'=> , ))
+	 *													type can be 'hidden', 'text', 'password', 'checkbox', 'radio', 'date', 'morecss', ...
+	 * 	   @param  	string			$selectedchoice  	'' or 'no', or 'yes' or '1' or '0'
+	 * 	   @param  	int|string		$useajax		   	0=No, 1=Yes, 2=Yes but submit page with &confirm=no if choice is No, 'xxx'=Yes and preoutput confirm box with div id=dialog-confirm-xxx
+	 *     @param  	int				$height          	Force height of box (0 = auto)
+	 *     @param	int				$width				Force width of box ('999' or '90%'). Ignored and forced to 90% on smartphones.
+	 *     @param	int				$disableformtag		1=Disable form tag. Can be used if we are already inside a <form> section.
+	 *     @return 	string      		    			HTML ajax code if a confirm ajax popup is required, Pure HTML code if it's an html form
 	 */
     public function formconfirm($page, $title, $question, $action, $formquestion = '', $selectedchoice = '', $useajax = 0, $height = 0, $width = 500, $disableformtag = 0)
 	{
@@ -4102,7 +4104,7 @@ class Form
 					} elseif ($input['type'] == 'select')
 					{
 						$more .= '<div class="tagtr"><div class="tagtd'.(empty($input['tdclass']) ? '' : (' '.$input['tdclass'])).'">';
-						if (!empty($input['label'])) $more .= $input['label'].'</div><div class="tagtd tdtop left">';
+						if (!empty($input['label'])) $more .= $input['label'].'</div><div class="tagtd left">';
 						$more .= $this->selectarray($input['name'], $input['values'], $input['default'], 1, 0, 0, $moreattr, 0, 0, 0, '', $morecss);
 						$more .= '</div></div>'."\n";
 					} elseif ($input['type'] == 'checkbox')
@@ -4191,7 +4193,7 @@ class Form
 			}
 			// Show JQuery confirm box.
 			$formconfirm .= '<div id="'.$dialogconfirm.'" title="'.dol_escape_htmltag($title).'" style="display: none;">';
-			if (!empty($formquestion['text'])) {
+			if (is_array($formquestion) && !empty($formquestion['text'])) {
 				$formconfirm .= '<div class="confirmtext">'.$formquestion['text'].'</div>'."\n";
 			}
 			if (!empty($more)) {
@@ -4286,7 +4288,7 @@ class Form
 			$formconfirm .= '<tr class="validtitre"><td class="validtitre" colspan="3">'.img_picto('', 'recent').' '.$title.'</td></tr>'."\n";
 
 			// Line text
-			if (!empty($formquestion['text'])) {
+			if (is_array($formquestion) && !empty($formquestion['text'])) {
 				$formconfirm .= '<tr class="valid"><td class="valid" colspan="3">'.$formquestion['text'].'</td></tr>'."\n";
 			}
 
@@ -5241,6 +5243,28 @@ class Form
     }
 
     /**
+     *  Show 2 HTML widget to input a date or combo list for day, month, years and optionaly hours and minutes.
+     *  Fields are preselected with :
+     *              - set_time date (must be a local PHP server timestamp or string date with format 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM')
+     *              - local date in user area, if set_time is '' (so if set_time is '', output may differs when done from two different location)
+     *              - Empty (fields empty), if set_time is -1 (in this case, parameter empty must also have value 1)
+     *
+     *  @param  integer     $set_time       Pre-selected date (must be a local PHP server timestamp), -1 to keep date not preselected, '' to use current date with 00:00 hour (Parameter 'empty' must be 0 or 2).
+     *  @param  integer     $set_time_end       Pre-selected date (must be a local PHP server timestamp), -1 to keep date not preselected, '' to use current date with 00:00 hour (Parameter 'empty' must be 0 or 2).
+     *  @param	string		$prefix			Prefix for fields name
+     *  @param	string		$empty			0=Fields required, 1=Empty inputs are allowed, 2=Empty inputs are allowed for hours only
+     * 	@return string                      Html for selectDate
+     *  @see    form_date(), select_month(), select_year(), select_dayofweek()
+     */
+    public function selectDateToDate($set_time = '', $set_time_end = '', $prefix = 're', $empty = 0)
+    {
+        $ret = $this->selectDate($set_time, $prefix.'_start', 0, 0, $empty);
+        $ret .= '<br/>';
+        $ret .= $this->selectDate($set_time_end, $prefix.'_end', 0, 0, $empty);
+        return $ret;
+    }
+
+    /**
      *  Show a HTML widget to input a date or combo list for day, month, years and optionaly hours and minutes.
 	 *  Fields are preselected with :
 	 *              - set_time date (must be a local PHP server timestamp or string date with format 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM')
@@ -5256,7 +5280,7 @@ class Form
 	 *	@param	int			$d				1=Show days, month, years
 	 * 	@param	int			$addnowlink		Add a link "Now", 1 with server time, 2 with local computer time
 	 * 	@param 	int			$disabled		Disable input fields
-	 *  @param  int			$fullday        When a checkbox with this html name is on, hour and day are set with 00:00 or 23:59
+	 *  @param  int			$fullday        When a checkbox with id #fullday is cheked, hours are set with 00:00 (if value if 'fulldaystart') or 23:59 (if value is 'fulldayend')
 	 *  @param	string		$addplusone		Add a link "+1 hour". Value must be name of another selectDate field.
 	 *  @param  datetime    $adddateof      Add a link "Date of ..." using the following date. See also $labeladddateof for the label used.
      *  @param  string      $openinghours   Specify hour start and hour end for the select ex 8,20
@@ -5347,7 +5371,7 @@ class Form
 				if ($usecalendar == "eldy")
 				{
 					// Zone de saisie manuelle de la date
-					$retstring .= '<input id="'.$prefix.'" name="'.$prefix.'" type="text" class="maxwidth75" maxlength="11" value="'.$formated_date.'"';
+					$retstring .= '<input id="'.$prefix.'" name="'.$prefix.'" type="text" class="maxwidthdate" maxlength="11" value="'.$formated_date.'"';
 					$retstring .= ($disabled ? ' disabled' : '');
 					$retstring .= ' onChange="dpChangeDay(\''.$prefix.'\',\''.$langs->trans("FormatDateShortJavaInput").'\'); "'; // FormatDateShortInput for dol_print_date / FormatDateShortJavaInput that is same for javascript
 					$retstring .= '>';
@@ -5400,7 +5424,7 @@ class Form
 
 					// Zone de saisie manuelle de la date
 					$retstring .= '<div class="nowrap inline-block">';
-					$retstring .= '<input id="'.$prefix.'" name="'.$prefix.'" type="text" class="maxwidth75" maxlength="11" value="'.$formated_date.'"';
+					$retstring .= '<input id="'.$prefix.'" name="'.$prefix.'" type="text" class="maxwidthdate" maxlength="11" value="'.$formated_date.'"';
 					$retstring .= ($disabled ? ' disabled' : '');
 					$retstring .= ' onChange="dpChangeDay(\''.$prefix.'\',\''.$langs->trans("FormatDateShortJavaInput").'\'); "'; // FormatDateShortInput for dol_print_date / FormatDateShortJavaInput that is same for javascript
 					$retstring .= '>';
@@ -5543,10 +5567,17 @@ class Form
                 $reset_scripts .= 'jQuery(\'#'.$prefix.'year\').val(\''.dol_print_date(dol_now(), '%Y', 'tzuser').'\');';
             } elseif ($addnowlink == 2)
             {
+            	/* Disabled because the output does not use the string format defined by FormatDateShort key to forge the value into #prefix.
+            	 * This break application for foreign languages.
                 $reset_scripts .= 'jQuery(\'#'.$prefix.'\').val(d.toLocaleDateString(\''.str_replace('_', '-', $langs->defaultlang).'\'));';
                 $reset_scripts .= 'jQuery(\'#'.$prefix.'day\').val(d.getDate().pad());';
                 $reset_scripts .= 'jQuery(\'#'.$prefix.'month\').val(parseInt(d.getMonth().pad()) + 1);';
                 $reset_scripts .= 'jQuery(\'#'.$prefix.'year\').val(d.getFullYear());';
+                */
+                $reset_scripts .= 'jQuery(\'#'.$prefix.'\').val(\''.dol_print_date(dol_now(), 'day', 'tzuser').'\');';
+                $reset_scripts .= 'jQuery(\'#'.$prefix.'day\').val(\''.dol_print_date(dol_now(), '%d', 'tzuser').'\');';
+                $reset_scripts .= 'jQuery(\'#'.$prefix.'month\').val(\''.dol_print_date(dol_now(), '%m', 'tzuser').'\');';
+                $reset_scripts .= 'jQuery(\'#'.$prefix.'year\').val(\''.dol_print_date(dol_now(), '%Y', 'tzuser').'\');';
             }
 			/*if ($usecalendar == "eldy")
             {
@@ -5674,8 +5705,7 @@ class Form
 			$minSelected = convertSecondToTime($iSecond, 'min');
 		}
 
-		if ($typehour == 'select')
-		{
+		if ($typehour == 'select') {
 			$retstring .= '<select class="flat" id="select_'.$prefix.'hour" name="'.$prefix.'hour"'.($disabled ? ' disabled' : '').'>';
 			for ($hour = 0; $hour < 25; $hour++)	// For a duration, we allow 24 hours
 			{
@@ -5687,10 +5717,11 @@ class Form
 				$retstring .= ">".$hour."</option>";
 			}
 			$retstring .= "</select>";
-		} elseif ($typehour == 'text' || $typehour == 'textselect')
-		{
-			$retstring .= '<input placeholder="'.$langs->trans('HourShort').'" type="number" min="0" size="1" name="'.$prefix.'hour"'.($disabled ? ' disabled' : '').' class="flat maxwidth50 inputhour" value="'.(($hourSelected != '') ? ((int) $hourSelected) : '').'">';
-		} else return 'BadValueForParameterTypeHour';
+		} elseif ($typehour == 'text' || $typehour == 'textselect') {
+			$retstring .= '<input placeholder="'.$langs->trans('HourShort').'" type="number" min="0" name="'.$prefix.'hour"'.($disabled ? ' disabled' : '').' class="flat maxwidth50 inputhour" value="'.(($hourSelected != '') ? ((int) $hourSelected) : '').'">';
+		} else {
+			return 'BadValueForParameterTypeHour';
+		}
 
 		if ($typehour != 'text') $retstring .= ' '.$langs->trans('HourShort');
 		else $retstring .= '<span class="hideonsmartphone">:</span>';
@@ -5711,7 +5742,7 @@ class Form
 			$retstring .= "</select>";
 		} elseif ($typehour == 'text')
 		{
-			$retstring .= '<input placeholder="'.$langs->trans('MinuteShort').'" type="number" min="0" size="1" name="'.$prefix.'min"'.($disabled ? ' disabled' : '').' class="flat maxwidth50 inputminute" value="'.(($minSelected != '') ? ((int) $minSelected) : '').'">';
+			$retstring .= '<input placeholder="'.$langs->trans('MinuteShort').'" type="number" min="0" name="'.$prefix.'min"'.($disabled ? ' disabled' : '').' class="flat maxwidth50 inputminute" value="'.(($minSelected != '') ? ((int) $minSelected) : '').'">';
 		}
 
 		if ($typehour != 'text') $retstring .= ' '.$langs->trans('MinuteShort');
@@ -5758,6 +5789,7 @@ class Form
 		if (!empty($classpath))
 		{
 			dol_include_once($classpath);
+
 			if ($classname && class_exists($classname))
 			{
 				$objecttmp = new $classname($this->db);
@@ -6551,9 +6583,10 @@ class Form
 	 * 	@param		int		$id				Id of object
 	 * 	@param		string	$type			Type of category ('member', 'customer', 'supplier', 'product', 'contact'). Old mode (0, 1, 2, ...) is deprecated.
 	 *  @param		int		$rendermode		0=Default, use multiselect. 1=Emulate multiselect (recommended)
+	 *  @param		int		$nolink			1=Do not add html links
 	 * 	@return		string					String with categories
 	 */
-    public function showCategories($id, $type, $rendermode = 0)
+    public function showCategories($id, $type, $rendermode = 0, $nolink = 0)
 	{
 		global $db;
 
@@ -6567,7 +6600,7 @@ class Form
 			$toprint = array();
 			foreach ($categories as $c)
 			{
-				$ways = $c->print_all_ways(' &gt;&gt; ', '', 0, 1); // $ways[0] = "ccc2 >> ccc2a >> ccc2a1" with html formated text
+				$ways = $c->print_all_ways(' &gt;&gt; ', ($nolink ? 'none' : ''), 0, 1); // $ways[0] = "ccc2 >> ccc2a >> ccc2a1" with html formated text
 				foreach ($ways as $way)
 				{
 					$toprint[] = '<li class="select2-search-choice-dolibarr noborderoncategories"'.($c->color ? ' style="background: #'.$c->color.';"' : ' style="background: #aaa"').'>'.$way.'</li>';
@@ -6767,7 +6800,8 @@ class Form
 				'order'=>array('enabled'=>$conf->commande->enabled, 'perms'=>1, 'label'=>'LinkToOrder', 'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.ref, t.ref_client, t.total_ht FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."commande as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('commande').')'),
 				'invoice'=>array('enabled'=>$conf->facture->enabled, 'perms'=>1, 'label'=>'LinkToInvoice', 'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.ref, t.ref_client, t.total as total_ht FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."facture as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('invoice').')'),
 				'invoice_template'=>array('enabled'=>$conf->facture->enabled, 'perms'=>1, 'label'=>'LinkToTemplateInvoice', 'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.titre as ref, t.total as total_ht FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."facture_rec as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('invoice').')'),
-				'contrat'=>array('enabled'=>$conf->contrat->enabled, 'perms'=>1, 'label'=>'LinkToContract', 'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.ref, t.ref_supplier, '' as total_ht FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."contrat as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('contract').')'),
+				'contrat'=>array('enabled'=>$conf->contrat->enabled, 'perms'=>1, 'label'=>'LinkToContract',
+								'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.ref, t.ref_customer as ref_client, t.ref_supplier, '' as total_ht FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."contrat as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('contract').')'),
 				'fichinter'=>array('enabled'=>$conf->ficheinter->enabled, 'perms'=>1, 'label'=>'LinkToIntervention', 'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.ref FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."fichinter as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('intervention').')'),
 				'supplier_proposal'=>array('enabled'=>$conf->supplier_proposal->enabled, 'perms'=>1, 'label'=>'LinkToSupplierProposal', 'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.ref, '' as ref_supplier, t.total_ht FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."supplier_proposal as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('supplier_proposal').')'),
 				'order_supplier'=>array('enabled'=>$conf->supplier_order->enabled, 'perms'=>1, 'label'=>'LinkToSupplierOrder', 'sql'=>"SELECT s.rowid as socid, s.nom as name, s.client, t.rowid, t.ref, t.ref_supplier, t.total_ht FROM ".MAIN_DB_PREFIX."societe as s, ".MAIN_DB_PREFIX."commande_fournisseur as t WHERE t.fk_soc = s.rowid AND t.fk_soc IN (".$listofidcompanytoscan.') AND t.entity IN ('.getEntity('commande_fournisseur').')'),

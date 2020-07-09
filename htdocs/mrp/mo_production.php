@@ -98,8 +98,8 @@ include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php'; // Must be includ
 // Security check - Protection if external user
 //if ($user->socid > 0) accessforbidden();
 //if ($user->socid > 0) $socid = $user->socid;
-//$isdraft = (($object->statut == $object::STATUS_DRAFT) ? 1 : 0);
-//$result = restrictedArea($user, 'mrp', $object->id, '', '', 'fk_soc', 'rowid', $isdraft);
+$isdraft = (($object->status == $object::STATUS_DRAFT) ? 1 : 0);
+$result = restrictedArea($user, 'mrp', $object->id, 'mrp_mo', '', 'fk_soc', 'rowid', $isdraft);
 
 $permissionnote = $user->rights->mrp->write; // Used by the include of actions_setnotes.inc.php
 $permissiondellink = $user->rights->mrp->write; // Used by the include of actions_dellink.inc.php
@@ -649,7 +649,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 
 	if (in_array($action, array('consumeorproduce', 'consumeandproduceall', 'addconsumeline')))
 	{
-		print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'" class="'.(in_array($action, array('consumeorproduce', 'consumeandproduceall')) ? 'formconsumeproduce' : '').'">';
+		print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
 		print '<input type="hidden" name="token" value="'.newToken().'">';
 		print '<input type="hidden" name="action" value="confirm_'.$action.'">';
 		print '<input type="hidden" name="backtopage" value="'.$backtopage.'">';
@@ -661,15 +661,18 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			//$defaultstockmovementcode = GETPOST('inventorycode', 'alphanohtml') ? GETPOST('inventorycode', 'alphanohtml') : $object->ref.'_'.dol_print_date(dol_now(), 'dayhourlog');
 			$defaultstockmovementcode = GETPOST('inventorycode', 'alphanohtml') ? GETPOST('inventorycode', 'alphanohtml') : $langs->trans("ProductionForRef", $object->ref);
 
-			print '<div class="center">';
+			print '<div class="center'.(in_array($action, array('consumeorproduce', 'consumeandproduceall')) ? ' formconsumeproduce' : '').'">';
 			print '<span class="opacitymedium hideonsmartphone">'.$langs->trans("ConfirmProductionDesc", $langs->transnoentitiesnoconv("Confirm")).'<br></span>';
-			print $langs->trans("MovementLabel").': <input type="text" class="minwidth300" name="inventorylabel" value="'.$defaultstockmovementlabel.'"> &nbsp; ';
-			print $langs->trans("InventoryCode").': <input type="text" class="maxwidth200" name="inventorycode" value="'.$defaultstockmovementcode.'"><br><br>';
+			print '<span class="fieldrequired">'.$langs->trans("InventoryCode").':</span> <input type="text" class="maxwidth200" name="inventorycode" value="'.$defaultstockmovementcode.'"> &nbsp; ';
+			print '<span class="clearbothonsmartphone"></span>';
+			print $langs->trans("MovementLabel").': <input type="text" class="minwidth300" name="inventorylabel" value="'.$defaultstockmovementlabel.'"><br><br>';
 			print '<input type="checkbox" id="autoclose" name="autoclose" value="1"'.(GETPOSTISSET('inventorylabel') ? (GETPOST('autoclose') ? ' checked="checked"' : '') : ' checked="checked"').'> <label for="autoclose">'.$langs->trans("AutoCloseMO").'</label><br>';
 			print '<input class="button" type="submit" value="'.$langs->trans("Confirm").'" name="confirm">';
 			print ' &nbsp; ';
 			print '<input class="button" type="submit" value="'.$langs->trans("Cancel").'" name="cancel">';
+			print '<br><br>';
 			print '</div>';
+
 			print '<br>';
 		}
 	}
@@ -752,7 +755,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 
     	    		print '<tr>';
     	    		print '<td>'.$tmpproduct->getNomUrl(1).'</td>';
-    	    		print '<td class="right">';
+    	    		print '<td class="right nowraponall">';
     	    		$help = '';
     	    		if ($line->qty_frozen) $help .= ($help ? '<br>' : '').'<strong>'.$langs->trans("QuantityFrozen").'</strong>: '.yn(1).' ('.$langs->trans("QuantityConsumedInvariable").')';
     	    		if ($line->disable_stock_change) $help .= ($help ? '<br>' : '').'<strong>'.$langs->trans("DisableStockChange").'</strong>: '.yn(1).' ('.(($tmpproduct->type == Product::TYPE_SERVICE && empty($conf->global->STOCK_SUPPORTS_SERVICES)) ? $langs->trans("NoStockChangeOnServices") : $langs->trans("DisableStockChangeHelp")).')';
@@ -801,7 +804,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
     	    			print '</td>';
     	    			print '<td></td>';
     	    			print '<td class="right">'.$line2['qty'].'</td>';
-    	    			print '<td>';
+    	    			print '<td class="tdoverflowmax150">';
     	    			if ($line2['fk_warehouse'] > 0) {
     	    				$result = $tmpwarehouse->fetch($line2['fk_warehouse']);
     	    				if ($result > 0) print $tmpwarehouse->getNomUrl(1);
@@ -914,7 +917,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
     				print '<tr>';
     				print '<td>'.$tmpproduct->getNomUrl(1).'</td>';
     				print '<td class="right">'.$line->qty.'</td>';
-    				print '<td class="right">';
+    				print '<td class="right nowraponall">';
     				if ($alreadyproduced) {
     					print '<script>';
     					print 'jQuery(document).ready(function() {
@@ -950,7 +953,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
     					print '</td>';
     					print '<td></td>';
     					print '<td class="right">'.$line2['qty'].'</td>';
-    					print '<td>';
+    					print '<td class="tdoverflowmax150">';
     					if ($line2['fk_warehouse'] > 0) {
     						$result = $tmpwarehouse->fetch($line2['fk_warehouse']);
     						if ($result > 0) print $tmpwarehouse->getNomUrl(1);

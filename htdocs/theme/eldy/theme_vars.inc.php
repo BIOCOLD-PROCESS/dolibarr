@@ -59,14 +59,14 @@ $colorbacktabcard1 = '255,255,255'; // card
 $colorbacktabactive = '234,234,234';
 $colorbacklineimpair1 = '255,255,255'; // line impair
 $colorbacklineimpair2 = '255,255,255'; // line impair
-$colorbacklinepair1 = '251,251,251'; // line pair
-$colorbacklinepair2 = '251,251,251'; // line pair
+$colorbacklinepair1 = '250,250,250'; // line pair
+$colorbacklinepair2 = '250,250,250'; // line pair
 $colorbacklinepairhover = '230,237,244'; // line hover
 $colorbacklinepairchecked = '230,237,244'; // line checked
 $colorbacklinebreak = '248,247,244'; // line break
 $colorbackbody = '255,255,255';
-$colortexttitlenotab = '0,123,140'; // 150,90,121 140,80,10 or 10,140,80  #875a7b  green=0,113,120, violet: 0,50,120
-$colortexttitlenotab2 = '100,0,100'; // 150,90,121 140,80,10 or 10,140,80  #875a7b  green=0,113,120, violet: 0,50,120
+$colortexttitlenotab = '0,123,140'; // 150,90,121 140,80,10 or 10,140,80  #875a7b  green=0,123,140, violet: 0,50,120
+$colortexttitlenotab2 = '100,0,100'; // 150,90,121 140,80,10 or 10,140,80  #875a7b  green=0,123,140, violet: 0,50,120
 $colortexttitle = '0,0,0';
 $colortexttitlelink = '10, 20, 100';
 $colortext = '0,0,0';

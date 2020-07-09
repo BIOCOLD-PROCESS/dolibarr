@@ -591,7 +591,7 @@ function GETPOST($paramname, $check = 'alphanohtml', $method = 0, $filter = null
 				// '"' is dangerous because param in url can close the href= or src= and add javascript functions.
 				// '../' is dangerous because it allows dir transversals
 				$out = str_replace(array('"', '../'), '', trim($out));
-				$out = dol_string_nohtmltag($out);
+				$out = dol_string_nohtmltag($out, 1);
 			}
 			break;
 		case 'restricthtml':		// Recommended for most html textarea
@@ -1198,7 +1198,7 @@ function dol_get_fiche_head($links = array(), $active = '', $title = '', $notab 
 	{
 		$limittitle = 30;
 		$out .= '<a class="tabTitle">';
-		if ($picto) $out .= img_picto($title, ($pictoisfullpath ? '' : 'object_').$picto, '', $pictoisfullpath, 0, 0, '', 'imgTabTitle').' ';
+		if ($picto && empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER)) $out .= img_picto($title, ($pictoisfullpath ? '' : 'object_').$picto, '', $pictoisfullpath, 0, 0, '', 'imgTabTitle').' ';
 		$out .= '<span class="tabTitleText">'.dol_trunc($title, $limittitle).'</span>';
 		$out .= '</a>';
 	}
@@ -2175,6 +2175,8 @@ function dol_print_email($email, $cid = 0, $socid = 0, $addlink = 0, $max = 64, 
 
 	$newemail = $email;
 
+	if (!empty($conf->global->MAIN_OPTIMIZEFORTEXTBROWSER) && $withpicto) $withpicto = 0;
+
 	if (empty($email)) return '&nbsp;';
 
 	if (!empty($addlink))
@@ -2206,7 +2208,7 @@ function dol_print_email($email, $cid = 0, $socid = 0, $addlink = 0, $max = 64, 
 	}
 
 	//$rep = '<div class="nospan" style="margin-right: 10px">';
-	$rep = ($withpicto ?img_picto($langs->trans("EMail").' : '.$email, 'object_email.png').' ' : '').$newemail;
+	$rep = ($withpicto ? img_picto($langs->trans("EMail").' : '.$email, 'object_email.png').' ' : '').$newemail;
 	//$rep .= '</div>';
 	if ($hookmanager) {
 		$parameters = array('cid' => $cid, 'socid' => $socid, 'addlink' => $addlink, 'picto' => $withpicto);
@@ -3007,7 +3009,7 @@ function img_picto($titlealt, $picto, $moreatt = '', $pictoisfullpath = false, $
         if (empty($srconly) && in_array($pictowithouttext, array(
         		'1downarrow', '1uparrow', '1leftarrow', '1rightarrow', '1uparrow_selected', '1downarrow_selected', '1leftarrow_selected', '1rightarrow_selected',
         		'accountancy', 'address', 'bank_account', 'barcode', 'bank', 'bill', 'bookmark', 'bom', 'building',
-        		'cash-register', 'category', 'check', 'close_title', 'company', 'contact', 'contract', 'cubes',
+        		'cash-register', 'category', 'check', 'clock', 'close_title', 'company', 'contact', 'contract', 'cubes',
         		'delete', 'dolly', 'dollyrevert', 'edit', 'ellipsis-h', 'external-link-alt', 'external-link-square-alt',
         		'filter', 'file-code', 'file-export', 'file-import', 'file-upload', 'folder', 'folder-open', 'globe', 'globe-americas', 'grip', 'grip_title', 'help',
         		'intervention', 'label', 'language', 'list', 'listlight', 'lot',
@@ -3036,7 +3038,7 @@ function img_picto($titlealt, $picto, $moreatt = '', $pictoisfullpath = false, $
 			$fakey = $pictowithouttext;
 			$facolor = ''; $fasize = '';
 			$fa = 'fas';
-			if (in_array($pictowithouttext, array('object_generic', 'note', 'off', 'on', 'object_bookmark', 'bookmark', 'vcard'))) {
+			if (in_array($pictowithouttext, array('clock', 'object_generic', 'note', 'off', 'on', 'object_bookmark', 'bookmark', 'vcard'))) {
 				$fa = 'far';
 			}
 			if (in_array($pictowithouttext, array('skype', 'twitter', 'facebook', 'linkedin', 'instagram', 'snapchat', 'stripe-s', 'youtube', 'google-plus-g', 'whatsapp'))) {
@@ -3053,7 +3055,7 @@ function img_picto($titlealt, $picto, $moreatt = '', $pictoisfullpath = false, $
 		    	'accounting'=>'chart-line', 'category'=>'tag', 'dollyrevert'=>'dolly',
 		    	'hrm'=>'umbrella-beach', 'margin'=>'calculator', 'members'=>'users', 'ticket'=>'ticket-alt', 'globe'=>'external-link-alt', 'lot'=>'barcode',
 		    	'email'=>'at',
-		    	'edit'=>'pencil-alt', 'grip_title'=>'arrows-alt', 'grip'=>'arrows-alt', 'help'=>'info-circle',
+		    	'edit'=>'pencil-alt', 'grip_title'=>'arrows-alt', 'grip'=>'arrows-alt', 'help'=>'question-circle',
 		    	'generic'=>'file', 'holiday'=>'umbrella-beach', 'label'=>'layer-group',
 		    	'member'=>'users', 'mrp'=>'cubes', 'trip'=>'wallet', 'group'=>'users',
 		    	'sign-out'=>'sign-out-alt',
@@ -3141,7 +3143,7 @@ function img_picto($titlealt, $picto, $moreatt = '', $pictoisfullpath = false, $
 			$arrayconvpictotocolor = array(
 				'address'=>'#37a', 'building'=>'#37a', 'bom'=>'#a69944',
 				'companies'=>'#37a', 'company'=>'#37a', 'contact'=>'#37a', 'dynamicprice'=>'#a69944',
-				'edit'=>'#444', 'note'=>'#999', 'error'=>'', 'listlight'=>'#999',
+				'edit'=>'#444', 'note'=>'#999', 'error'=>'', 'help'=>'#bbb', 'listlight'=>'#999',
 				'dolly'=>'#a69944', 'dollyrevert'=>'#a69944', 'lot'=>'#a69944',
 				'map-marker-alt'=>'#aaa', 'mrp'=>'#a69944', 'product'=>'#a69944', 'service'=>'#a69944', 'stock'=>'#a69944',
 				'other'=>'#ddd',
@@ -3828,7 +3830,7 @@ function dol_print_error($db = '', $error = '', $errors = null)
 		$out .= $langs->trans("InformationToHelpDiagnose").":<br>\n";
 
 		$out .= "<b>".$langs->trans("Date").":</b> ".dol_print_date(time(), 'dayhourlog')."<br>\n";
-		$out .= "<b>".$langs->trans("Dolibarr").":</b> ".DOL_VERSION."<br>\n";
+		$out .= "<b>".$langs->trans("Dolibarr").":</b> ".DOL_VERSION." - https://www.dolibarr.org<br>\n";
 		if (isset($conf->global->MAIN_FEATURES_LEVEL)) $out .= "<b>".$langs->trans("LevelOfFeature").":</b> ".$conf->global->MAIN_FEATURES_LEVEL."<br>\n";
 		if (function_exists("phpversion"))
 		{
@@ -4187,15 +4189,16 @@ function load_fiche_titre($titre, $morehtmlright = '', $picto = 'generic', $pict
  *	@param	int|string  $totalnboflines		Total number of records/lines for all pages (if known). Use a negative value of number to not show number. Use '' if unknown.
  *	@param	string	    $picto				Icon to use before title (should be a 32x32 transparent png file)
  *	@param	int		    $pictoisfullpath	1=Icon name is a full absolute url of image
- *  @param	string	    $morehtmlright		More html to show
+ *  @param	string	    $morehtmlright		More html to show (after arrows)
  *  @param  string      $morecss            More css to the table
  *  @param  int         $limit              Max number of lines (-1 = use default, 0 = no limit, > 0 = limit).
  *  @param  int         $hideselectlimit    Force to hide select limit
  *  @param  int         $hidenavigation     Force to hide all navigation tools
  *  @param  int			$pagenavastextinput 1=Do not suggest list of pages to navigate but suggest the page number into an input field.
+ *  @param	string		$morehtmlrightbeforearrow	More html to show (before arrows)
  *	@return	void
  */
-function print_barre_liste($titre, $page, $file, $options = '', $sortfield = '', $sortorder = '', $morehtmlcenter = '', $num = -1, $totalnboflines = '', $picto = 'generic', $pictoisfullpath = 0, $morehtmlright = '', $morecss = '', $limit = -1, $hideselectlimit = 0, $hidenavigation = 0, $pagenavastextinput = 0)
+function print_barre_liste($titre, $page, $file, $options = '', $sortfield = '', $sortorder = '', $morehtmlcenter = '', $num = -1, $totalnboflines = '', $picto = 'generic', $pictoisfullpath = 0, $morehtmlright = '', $morecss = '', $limit = -1, $hideselectlimit = 0, $hidenavigation = 0, $pagenavastextinput = 0, $morehtmlrightbeforearrow = '')
 {
 	global $conf, $langs;
 
@@ -4296,8 +4299,8 @@ function print_barre_liste($titre, $page, $file, $options = '', $sortfield = '',
 		}
 	}
 
-	if ($savlimit || $morehtmlright) {
-		print_fleche_navigation($page, $file, $options, $nextpage, $pagelist, $morehtmlright, $savlimit, $totalnboflines, $hideselectlimit); // output the div and ul for previous/last completed with page numbers into $pagelist
+	if ($savlimit || $morehtmlright || $morehtmlrightbeforearrow) {
+		print_fleche_navigation($page, $file, $options, $nextpage, $pagelist, $morehtmlright, $savlimit, $totalnboflines, $hideselectlimit, $morehtmlrightbeforearrow); // output the div and ul for previous/last completed with page numbers into $pagelist
 	}
 
 	// js to autoselect page field on focus
@@ -4323,13 +4326,20 @@ function print_barre_liste($titre, $page, $file, $options = '', $sortfield = '',
  *  @param  int             $limit              Max nb of record to show  (-1 = no combo with limit, 0 = no limit, > 0 = limit)
  *	@param	int		        $totalnboflines		Total number of records/lines for all pages (if known)
  *  @param  int             $hideselectlimit    Force to hide select limit
+ *  @param	string			$beforearrows		HTML content to show before arrows. Must NOT contains '<li> </li>' tags.
  *	@return	void
  */
-function print_fleche_navigation($page, $file, $options = '', $nextpage = 0, $betweenarrows = '', $afterarrows = '', $limit = -1, $totalnboflines = 0, $hideselectlimit = 0)
+function print_fleche_navigation($page, $file, $options = '', $nextpage = 0, $betweenarrows = '', $afterarrows = '', $limit = -1, $totalnboflines = 0, $hideselectlimit = 0, $beforearrows = '')
 {
 	global $conf, $langs;
 
 	print '<div class="pagination"><ul>';
+	if ($beforearrows)
+	{
+		print '<li class="paginationbeforearrows">';
+		print $beforearrows;
+		print '</li>';
+	}
 	if ((int) $limit > 0 && empty($hideselectlimit))
 	{
 		$pagesizechoices = '10:10,15:15,20:20,30:30,40:40,50:50,100:100,250:250,500:500,1000:1000,5000:5000';
@@ -4378,7 +4388,7 @@ function print_fleche_navigation($page, $file, $options = '', $nextpage = 0, $be
 	}
 	if ($page > 0)
 	{
-		print '<li class="pagination paginationpage"><a class="paginationprevious" href="'.$file.'?page='.($page - 1).$options.'"><i class="fa fa-chevron-left" title="'.dol_escape_htmltag($langs->trans("Previous")).'"></i></a></li>';
+		print '<li class="pagination paginationpage paginationpageleft"><a class="paginationprevious" href="'.$file.'?page='.($page - 1).$options.'"><i class="fa fa-chevron-left" title="'.dol_escape_htmltag($langs->trans("Previous")).'"></i></a></li>';
 	}
 	if ($betweenarrows)
 	{
@@ -4388,7 +4398,7 @@ function print_fleche_navigation($page, $file, $options = '', $nextpage = 0, $be
 	}
 	if ($nextpage > 0)
 	{
-		print '<li class="pagination paginationpage"><a class="paginationnext" href="'.$file.'?page='.($page + 1).$options.'"><i class="fa fa-chevron-right" title="'.dol_escape_htmltag($langs->trans("Next")).'"></i></a></li>';
+		print '<li class="pagination paginationpage paginationpageright"><a class="paginationnext" href="'.$file.'?page='.($page + 1).$options.'"><i class="fa fa-chevron-right" title="'.dol_escape_htmltag($langs->trans("Next")).'"></i></a></li>';
 	}
 	if ($afterarrows)
 	{
@@ -7472,23 +7482,6 @@ function printCommonFooter($zone = 'private')
 
 			print '});'."\n";
 
-			// Google Analytics
-			// TODO Add a hook here
-			if (!empty($conf->google->enabled) && !empty($conf->global->MAIN_GOOGLE_AN_ID))
-			{
-				print "\n";
-				print "/* JS CODE TO ENABLE for google analtics tag */\n";
-				print '  var _gaq = _gaq || [];'."\n";
-				print '  _gaq.push([\'_setAccount\', \''.$conf->global->MAIN_GOOGLE_AN_ID.'\']);'."\n";
-				print '  _gaq.push([\'_trackPageview\']);'."\n";
-				print ''."\n";
-				print '  (function() {'."\n";
-				print '    var ga = document.createElement(\'script\'); ga.type = \'text/javascript\'; ga.async = true;'."\n";
-				print '    ga.src = (\'https:\' == document.location.protocol ? \'https://ssl\' : \'http://www\') + \'.google-analytics.com/ga.js\';'."\n";
-				print '    var s = document.getElementsByTagName(\'script\')[0]; s.parentNode.insertBefore(ga, s);'."\n";
-				print '  })();'."\n";
-			}
-
 			// End of tuning
 			if (!empty($_SERVER['MAIN_SHOW_TUNING_INFO']) || !empty($conf->global->MAIN_SHOW_TUNING_INFO))
 			{
@@ -7517,6 +7510,28 @@ function printCommonFooter($zone = 'private')
 			}
 
 			print "\n".'</script>'."\n";
+
+			// Google Analytics
+			// TODO Add a hook here
+			if (!empty($conf->google->enabled) && !empty($conf->global->MAIN_GOOGLE_AN_ID))
+			{
+				$tmptagarray = explode(',', $conf->global->MAIN_GOOGLE_AN_ID);
+				foreach ($tmptagarray as $tmptag) {
+					print "\n";
+					print "<!-- JS CODE TO ENABLE for google analtics tag -->\n";
+					print "
+					<!-- Global site tag (gtag.js) - Google Analytics -->
+					<script async src=\"https://www.googletagmanager.com/gtag/js?id=".trim($tmptag)."\"></script>
+					<script>
+					window.dataLayer = window.dataLayer || [];
+					function gtag(){dataLayer.push(arguments);}
+					gtag('js', new Date());
+
+					gtag('config', '".trim($tmptag)."');
+					</script>";
+					print "\n";
+				}
+			}
 		}
 
 		// Add Xdebug coverage of code
@@ -7803,7 +7818,7 @@ function getImageFileNameForSize($file, $extName, $extImgTarget = '')
 	$dirName = dirname($file);
 	if ($dirName == '.') $dirName = '';
 
-	$fileName = preg_replace('/(\.gif|\.jpeg|\.jpg|\.png|\.bmp)$/i', '', $file); // We remove extension, whatever is its case
+	$fileName = preg_replace('/(\.gif|\.jpeg|\.jpg|\.png|\.bmp|\.webp)$/i', '', $file); // We remove extension, whatever is its case
 	$fileName = basename($fileName);
 
 	if (empty($extImgTarget)) $extImgTarget = (preg_match('/\.jpg$/i', $file) ? '.jpg' : '');
@@ -7811,6 +7826,7 @@ function getImageFileNameForSize($file, $extName, $extImgTarget = '')
 	if (empty($extImgTarget)) $extImgTarget = (preg_match('/\.gif$/i', $file) ? '.gif' : '');
 	if (empty($extImgTarget)) $extImgTarget = (preg_match('/\.png$/i', $file) ? '.png' : '');
 	if (empty($extImgTarget)) $extImgTarget = (preg_match('/\.bmp$/i', $file) ? '.bmp' : '');
+	if (empty($extImgTarget)) $extImgTarget = (preg_match('/\.webp$/i', $file) ? '.webp' : '');
 
 	if (!$extImgTarget) return $file;
 
@@ -7836,7 +7852,7 @@ function getAdvancedPreviewUrl($modulepart, $relativepath, $alldata = 0, $param 
 
 	if (empty($conf->use_javascript_ajax)) return '';
 
-	$mime_preview = array('bmp', 'jpeg', 'png', 'gif', 'tiff', 'pdf', 'plain', 'css', 'svg+xml');
+	$mime_preview = array('bmp', 'jpeg', 'png', 'gif', 'tiff', 'pdf', 'plain', 'css', 'svg+xml', 'webp');
 	//$mime_preview[]='vnd.oasis.opendocument.presentation';
 	//$mime_preview[]='archive';
 	$num_mime = array_search(dol_mimetype($relativepath, '', 1), $mime_preview);
@@ -7947,6 +7963,7 @@ function dol_mimetype($file, $default = 'application/octet-stream', $mode = 0)
 	if (preg_match('/\.bmp$/i', $tmpfile)) { $mime = 'image/bmp'; $imgmime = 'image.png'; $famime = 'file-image-o'; }
 	if (preg_match('/\.(tif|tiff)$/i', $tmpfile)) { $mime = 'image/tiff'; $imgmime = 'image.png'; $famime = 'file-image-o'; }
 	if (preg_match('/\.svg$/i', $tmpfile)) { $mime = 'image/svg+xml'; $imgmime = 'image.png'; $famime = 'file-image-o'; }
+	if (preg_match('/\.webp$/i', $tmpfile)) { $mime = 'image/webp'; $imgmime = 'image.png'; $famime = 'file-image-o'; }
 	// Calendar
 	if (preg_match('/\.vcs$/i', $tmpfile)) { $mime = 'text/calendar'; $imgmime = 'other.png'; $famime = 'file-text-o'; }
 	if (preg_match('/\.ics$/i', $tmpfile)) { $mime = 'text/calendar'; $imgmime = 'other.png'; $famime = 'file-text-o'; }
@@ -8591,15 +8608,16 @@ function fetchObjectByElement($element_id, $element_type, $element_ref = '')
 /**
  * Return if a file can contains executable content
  *
- * @param   string  $filename       File NamedRange
+ * @param   string  $filename       File name to test
  * @return  boolean                 True if yes, False if no
  */
 function isAFileWithExecutableContent($filename)
 {
-    if (preg_match('/\.(htm|html|js|php|php\d+|phtml|pl|py|cgi|ksh|sh|bash|bat|cmd|wpk|exe|dmg)$/i', $filename))
+    if (preg_match('/\.(htm|html|js|phar|php|php\d+|phtml|pht|pl|py|cgi|ksh|sh|shtml|bash|bat|cmd|wpk|exe|dmg)$/i', $filename))
     {
         return true;
     }
+
     return false;
 }
 

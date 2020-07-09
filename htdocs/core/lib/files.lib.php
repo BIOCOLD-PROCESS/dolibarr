@@ -320,11 +320,13 @@ function completeFileArrayWithDatabaseInfo(&$filearray, $relativedir)
 	// Complete filearray with properties found into $filearrayindatabase
 	foreach ($filearray as $key => $val)
 	{
+		$tmpfilename = preg_replace('/\.noexe$/', '', $filearray[$key]['name']);
+
 		$found = 0;
 		// Search if it exists into $filearrayindatabase
 		foreach ($filearrayindatabase as $key2 => $val2)
 		{
-			if ($filearrayindatabase[$key2]['name'] == $filearray[$key]['name'])
+			if ($filearrayindatabase[$key2]['name'] == $tmpfilename)
 			{
 				$filearray[$key]['position_name'] = ($filearrayindatabase[$key2]['position'] ? $filearrayindatabase[$key2]['position'] : '0').'_'.$filearrayindatabase[$key2]['name'];
 				$filearray[$key]['position'] = $filearrayindatabase[$key2]['position'];
@@ -345,7 +347,7 @@ function completeFileArrayWithDatabaseInfo(&$filearray, $relativedir)
 			$filearray[$key]['acl'] = '';
 
 			$rel_filename = preg_replace('/^'.preg_quote(DOL_DATA_ROOT, '/').'/', '', $filearray[$key]['fullname']);
-			if (!preg_match('/([\\/]temp[\\/]|[\\/]thumbs|\.meta$)/', $rel_filetorenameafter))     // If not a tmp file
+			if (!preg_match('/([\\/]temp[\\/]|[\\/]thumbs|\.meta$)/', $rel_filename))     // If not a tmp file
 			{
 				dol_syslog("list_of_documents We found a file called '".$filearray[$key]['name']."' not indexed into database. We add it");
 				include_once DOL_DOCUMENT_ROOT.'/ecm/class/ecmfiles.class.php';
@@ -984,10 +986,11 @@ function dolCheckVirus($src_file)
  * 	@param	integer	$uploaderrorcode	Value of PHP upload error code ($_FILES['field']['error'])
  * 	@param	int		$nohook				Disable all hooks
  * 	@param	string	$varfiles			_FILES var name
+ *  @param	string	$upload_dir			For information. Already included into $dest_file.
  *	@return int|string       			1 if OK, 2 if OK and .noexe appended, <0 or string if KO
  *  @see    dol_move()
  */
-function dol_move_uploaded_file($src_file, $dest_file, $allowoverwrite, $disablevirusscan = 0, $uploaderrorcode = 0, $nohook = 0, $varfiles = 'addedfile')
+function dol_move_uploaded_file($src_file, $dest_file, $allowoverwrite, $disablevirusscan = 0, $uploaderrorcode = 0, $nohook = 0, $varfiles = 'addedfile', $upload_dir = '')
 {
 	global $conf, $db, $user, $langs;
 	global $object, $hookmanager;
@@ -1044,8 +1047,14 @@ function dol_move_uploaded_file($src_file, $dest_file, $allowoverwrite, $disable
 		// Because if we put the documents directory into a directory inside web root (very bad), this allows to execute on demand arbitrary code.
 		if (isAFileWithExecutableContent($dest_file) && empty($conf->global->MAIN_DOCUMENT_IS_OUTSIDE_WEBROOT_SO_NOEXE_NOT_REQUIRED))
 		{
-			$file_name .= '.noexe';
-			$successcode = 2;
+			// $upload_dir ends with a slash, so be must be sure the medias dir to compare to ends with slash too.
+			$publicmediasdirwithslash = $conf->medias->multidir_output[$conf->entity];
+			if (! preg_match('/\/$/', $publicmediasdirwithslash)) $publicmediasdirwithslash.='/';
+
+			if (strpos($upload_dir, $publicmediasdirwithslash) !== 0) {	// We never add .noexe on files into media directory
+				$file_name .= '.noexe';
+				$successcode = 2;
+			}
 		}
 
 		// Security:
@@ -1090,6 +1099,11 @@ function dol_move_uploaded_file($src_file, $dest_file, $allowoverwrite, $disable
 			{
 				dol_syslog("Files.lib::dol_move_uploaded_file File ".$file_name." already exists. Return 'ErrorFileAlreadyExists'", LOG_WARNING);
 				return 'ErrorFileAlreadyExists';
+			}
+		} else {	// We are allowed to erase
+			if (is_dir($file_name_osencoded)) {	// If there is a directory with name of file to create
+				dol_syslog("Files.lib::dol_move_uploaded_file A directory with name ".$file_name." already exists. Return 'ErrorDirWithFileNameAlreadyExists'", LOG_WARNING);
+				return 'ErrorDirWithFileNameAlreadyExists';
 			}
 		}
 
@@ -1501,6 +1515,7 @@ function dol_add_file_process($upload_dir, $allowoverwrite = 0, $donotupdatesess
 	if (!empty($_FILES[$varfiles])) // For view $_FILES[$varfiles]['error']
 	{
 		dol_syslog('dol_add_file_process upload_dir='.$upload_dir.' allowoverwrite='.$allowoverwrite.' donotupdatesession='.$donotupdatesession.' savingdocmask='.$savingdocmask, LOG_DEBUG);
+
 		if (dol_mkdir($upload_dir) >= 0)
 		{
 			$TFile = $_FILES[$varfiles];
@@ -1527,6 +1542,13 @@ function dol_add_file_process($upload_dir, $allowoverwrite = 0, $donotupdatesess
 					$destfile = preg_replace('/__file__/', $TFile['name'][$i], $savingdocmask);
 				}
 
+				$filenameto = basename($destfile);
+				if (preg_match('/^\./', $filenameto)) {
+					$langs->load("errors"); // key must be loaded because we can't rely on loading during output, we need var substitution to be done now.
+					setEventMessages($langs->trans("ErrorFilenameCantStartWithDot", $filenameto), null, 'errors');
+					break;
+				}
+
 				// dol_sanitizeFileName the file name and lowercase extension
 				$info = pathinfo($destfull);
 				$destfull = $info['dirname'].'/'.dol_sanitizeFileName($info['filename'].($info['extension'] != '' ? ('.'.strtolower($info['extension'])) : ''));
@@ -1540,7 +1562,7 @@ function dol_add_file_process($upload_dir, $allowoverwrite = 0, $donotupdatesess
 				$destfull = dol_string_nohtmltag($destfull);
 
 				// Move file from temp directory to final directory. A .noexe may also be appended on file name.
-				$resupload = dol_move_uploaded_file($TFile['tmp_name'][$i], $destfull, $allowoverwrite, 0, $TFile['error'][$i], 0, $varfiles);
+				$resupload = dol_move_uploaded_file($TFile['tmp_name'][$i], $destfull, $allowoverwrite, 0, $TFile['error'][$i], 0, $varfiles, $upload_dir);
 
 				if (is_numeric($resupload) && $resupload > 0)   // $resupload can be 'ErrorFileAlreadyExists'
 				{
@@ -2794,20 +2816,11 @@ function dol_check_secure_access_document($modulepart, $original_file, $entity, 
 				exit;
 			}
 
-			/*$perm = GETPOST('perm', 'aZ09');
-			 $subperm = GETPOST('subperm', 'aZ09');
-			 if ($perm || $subperm)
-			 {
-			 if (($perm && !$subperm && $fuser->rights->$modulepart->$perm) || ($perm && $subperm && $fuser->rights->$modulepart->$perm->$subperm)) $accessallowed = 1;
-			 }
-			 else
-			 {*/
 			// Check fuser->rights->modulepart->myobject->read and fuser->rights->modulepart->read
 			$partsofdirinoriginalfile = explode('/', $original_file);
 			$partofdirinoriginalfile = $partsofdirinoriginalfile[0];
 			if ($partofdirinoriginalfile && ($fuser->rights->$modulepart->$partofdirinoriginalfile->{$lire} || $fuser->rights->$modulepart->$partofdirinoriginalfile->{$read})) $accessallowed = 1;
 			if ($fuser->rights->$modulepart->{$lire} || $fuser->rights->$modulepart->{$read}) $accessallowed = 1;
-			//}
 			$original_file = $conf->$modulepart->dir_output.'/'.$original_file;
 		}
 

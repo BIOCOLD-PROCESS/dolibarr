@@ -71,7 +71,6 @@ ActivityOnProjectThisYear=Actividad en proyecto este año.
 ChildOfProjectTask=Hijo del proyecto / tarea
 TaskHasChild=Tarea tiene hijo
 NotOwnerOfProject=No propietario de este proyecto privado.
-CantRemoveProject=Este proyecto no se puede eliminar, ya que se hace referencia a otros objetos (factura, pedidos u otros). Ver la pestaña de referers.
 ValidateProject=Validar projet
 ConfirmValidateProject=¿Seguro que quieres validar este proyecto?
 ConfirmCloseAProject=¿Seguro que quieres cerrar este proyecto?

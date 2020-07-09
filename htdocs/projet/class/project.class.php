@@ -721,7 +721,18 @@ class Project extends CommonObject
 			}
 		}
 
+		if (!$error)
+		{
+			$sql = "DELETE FROM ".MAIN_DB_PREFIX."projet_extrafields";
+			$sql .= " WHERE fk_object=".$this->id;
 
+			$resql = $this->db->query($sql);
+			if (!$resql)
+			{
+				$this->errors[] = $this->db->lasterror();
+				$error++;
+			}
+		}
 
 		// Delete project
 		if (!$error)
@@ -737,18 +748,7 @@ class Project extends CommonObject
 			}
 		}
 
-		if (!$error)
-		{
-			$sql = "DELETE FROM ".MAIN_DB_PREFIX."projet_extrafields";
-			$sql .= " WHERE fk_object=".$this->id;
 
-			$resql = $this->db->query($sql);
-			if (!$resql)
-			{
-				$this->errors[] = $this->db->lasterror();
-				$error++;
-			}
-		}
 
 		if (empty($error)) {
 			// We remove directory
@@ -1056,23 +1056,14 @@ class Project extends CommonObject
 				$linkclose .= ' alt="'.dol_escape_htmltag($label, 1).'"';
 			}
 			$linkclose .= ' title="'.dol_escape_htmltag($label, 1).'"';
-			$linkclose .= ' class="classfortooltip"';
-
-			/*
-			 $hookmanager->initHooks(array('projectdao'));
-			 $parameters=array('id'=>$this->id);
-			 // Note that $action and $object may have been modified by some hooks
-			 $reshook=$hookmanager->executeHooks('getnomurltooltip',$parameters,$this,$action);
-			 if ($reshook > 0)
-			 $linkclose = $hookmanager->resPrint;
-			 */
+			$linkclose .= ' class="classfortooltip'.($morecss ? ' '.$morecss : '').'"';
 		}
+		else $linkclose = ($morecss ? ' class="'.$morecss.'"' : '');
 
 		$picto = 'projectpub';
 		if (!$this->public) $picto = 'project';
 
 		$linkstart = '<a href="'.$url.'"';
-		$linkstart .= ($morecss ? ' class="'.$morecss.'"' : '');
 		$linkstart .= $linkclose.'>';
 		$linkend = '</a>';
 

@@ -55,7 +55,7 @@ class Societe extends CommonObject
 	public $table_element = 'societe';
 
 	/**
-	 * @var int Field with ID of parent key if this field has a parent
+	 * @var int Field with ID of parent key if this field has a parent or for child tables
 	 */
 	public $fk_element = 'fk_soc';
 
@@ -83,7 +83,8 @@ class Societe extends CommonObject
 	);
 
 	/**
-	 * @var array	List of child tables. To know object to delete on cascade.
+	 * @var array    List of child tables. To know object to delete on cascade.
+	 *               if name like with @ClassNAme:FilePathClass;ParentFkFieldName' it will call method deleteByParentField (with parentId as parameters) and FieldName to fetch and delete child object
 	 */
 	protected $childtablesoncascade = array(
 		"societe_prices",
@@ -91,7 +92,7 @@ class Societe extends CommonObject
 		"product_fournisseur_price",
 		"product_customer_price_log",
 		"product_customer_price",
-		"socpeople",
+		"@Contact:/contact/class/contact.class.php:fk_soc",
 		"adherent",
 		"societe_account",
 		"societe_rib",
@@ -1725,16 +1726,36 @@ class Societe extends CommonObject
 				}
 			}
 
-			foreach ($this->childtablesoncascade as $tabletodelete)
+			if (!$error)
 			{
-				if (!$error)
+				foreach ($this->childtablesoncascade as $tabletodelete)
 				{
-					$sql = "DELETE FROM ".MAIN_DB_PREFIX.$tabletodelete;
-					$sql .= " WHERE fk_soc = ".$id;
-					if (!$this->db->query($sql))
-					{
-						$error++;
-						$this->errors[] = $this->db->lasterror();
+					$deleteFromObject=explode(':', $tabletodelete);
+					if (count($deleteFromObject)>=2) {
+						$className=str_replace('@', '', $deleteFromObject[0]);
+						$filepath=$deleteFromObject[1];
+						$columnName=$deleteFromObject[2];
+						if (dol_include_once($filepath)) {
+							$child_object = new $className($this->db);
+							$result = $child_object->deleteByParentField($id, $columnName);
+							if ($result < 0) {
+								$error++;
+								$this->errors[] = $child_object->error;
+								break;
+							}
+						} else {
+							$error++;
+							$this->errors[] = 'Cannot include child class file ' .$filepath;
+							break;
+						}
+					} else {
+						$sql = "DELETE FROM " . MAIN_DB_PREFIX . $tabletodelete;
+						$sql .= " WHERE fk_soc = " . $id;
+						if (!$this->db->query($sql)) {
+							$error++;
+							$this->errors[] = $this->db->lasterror();
+							break;
+						}
 					}
 				}
 			}
@@ -2049,11 +2070,13 @@ class Societe extends CommonObject
 	/**
 	 *  Return array of sales representatives
 	 *
-	 *  @param	User	$user		Object user
-	 *  @param	int		$mode		0=Array with properties, 1=Array of id.
-	 *  @return array       		Array of sales representatives of third party
+	 *  @param	User		$user			Object user
+	 *  @param	int			$mode			0=Array with properties, 1=Array of id.
+	 *  @param	string		$sortfield		List of sort fields, separated by comma. Example: 't1.fielda,t2.fieldb'
+	 *  @param	string		$sortorder		Sort order, separated by comma. Example: 'ASC,DESC';
+	 *  @return array       				Array of sales representatives of third party
 	 */
-    public function getSalesRepresentatives(User $user, $mode = 0)
+    public function getSalesRepresentatives(User $user, $mode = 0, $sortfield = null, $sortorder = null)
 	{
 		global $conf;
 
@@ -2070,6 +2093,11 @@ class Societe extends CommonObject
 		} else $sql .= " WHERE entity in (0, ".$conf->entity.")";
 
 		$sql .= " AND u.rowid = sc.fk_user AND sc.fk_soc = ".$this->id;
+		if (empty($sortfield) && empty($sortorder)) {
+			$sortfield = 'u.lastname,u.firstname';
+			$sortorder = 'ASC,ASC';
+		}
+		$sql .= $this->db->order($sortfield, $sortorder);
 
 		$resql = $this->db->query($sql);
 		if ($resql)
@@ -2311,37 +2339,37 @@ class Societe extends CommonObject
 
 		$label .= '<div class="centpercent">';
 
-		if ($option == 'customer' || $option == 'compta' || $option == 'category' || $option == 'category_supplier')
+		if ($option == 'customer' || $option == 'compta' || $option == 'category')
 		{
-		    $label .= '<u>'.$langs->trans("ShowCustomer").'</u>';
+		    $label .= '<u>'.$langs->trans("Customer").'</u>';
 		    $linkstart = '<a href="'.DOL_URL_ROOT.'/comm/card.php?socid='.$this->id;
 		} elseif ($option == 'prospect' && empty($conf->global->SOCIETE_DISABLE_PROSPECTS))
 		{
-			$label .= '<u>'.$langs->trans("ShowProspect").'</u>';
+			$label .= '<u>'.$langs->trans("Prospect").'</u>';
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/comm/card.php?socid='.$this->id;
-		} elseif ($option == 'supplier')
+		} elseif ($option == 'supplier' || $option == 'category_supplier')
 		{
-			$label .= '<u>'.$langs->trans("ShowSupplier").'</u>';
+			$label .= '<u>'.$langs->trans("Supplier").'</u>';
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/fourn/card.php?socid='.$this->id;
 		} elseif ($option == 'agenda')
 		{
-			$label .= '<u>'.$langs->trans("ShowAgenda").'</u>';
+			$label .= '<u>'.$langs->trans("ThirdParty").'</u>';
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/societe/agenda.php?socid='.$this->id;
 		} elseif ($option == 'project')
 		{
-			$label .= '<u>'.$langs->trans("ShowProject").'</u>';
+			$label .= '<u>'.$langs->trans("ThirdParty").'</u>';
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/societe/project.php?socid='.$this->id;
 		} elseif ($option == 'margin')
 		{
-			$label .= '<u>'.$langs->trans("ShowMargin").'</u>';
+			$label .= '<u>'.$langs->trans("ThirdParty").'</u>';
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/margin/tabs/thirdpartyMargins.php?socid='.$this->id.'&type=1';
 		} elseif ($option == 'contact')
 		{
-			$label .= '<u>'.$langs->trans("ShowContacts").'</u>';
+			$label .= '<u>'.$langs->trans("ThirdParty").'</u>';
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/societe/contact.php?socid='.$this->id;
 		} elseif ($option == 'ban')
 		{
-			$label .= '<u>'.$langs->trans("ShowBan").'</u>';
+			$label .= '<u>'.$langs->trans("ThirdParty").'</u>';
 			$linkstart = '<a href="'.DOL_URL_ROOT.'/societe/paymentmodes.php?socid='.$this->id;
 		}
 
@@ -2960,12 +2988,12 @@ class Societe extends CommonObject
 
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
-	 *    	Returns an accounting code, following the accounting code module.
-	 *      May be identical to the one entered or generated automatically.
-	 *      To date only the automatic generation is implemented
+	 *    	Assigns a accounting code from the accounting code module.
+	 *      Computed value is stored into this->code_compta or this->code_compta_fournisseur according to $type.
+	 *      May be identical to the one entered or generated automatically. Currently, only the automatic generation is implemented.
 	 *
 	 *    	@param	string	$type		Type of thirdparty ('customer' or 'supplier')
-	 *		@return	string				Code compta si ok, 0 si aucun, <0 si ko
+	 *		@return	int					0 if OK, <0 if $type is not valid
 	 */
     public function get_codecompta($type)
 	{
@@ -3745,7 +3773,6 @@ class Societe extends CommonObject
 		elseif ($localTaxNum == 1) $sql .= " AND t.localtax1_type <> '0'";
 		elseif ($localTaxNum == 2) $sql .= " AND t.localtax2_type <> '0'";
 
-		dol_syslog("useLocalTax", LOG_DEBUG);
 		$resql = $this->db->query($sql);
 		if ($resql)
 		{

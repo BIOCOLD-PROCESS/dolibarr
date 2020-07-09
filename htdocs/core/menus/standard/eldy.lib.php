@@ -35,7 +35,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/menubase.class.php';
  * @param 	DoliDB	$db				Database handler
  * @param 	string	$atarget		Target (Example: '' or '_top')
  * @param 	int		$type_user     	0=Menu for backoffice, 1=Menu for front office
- * @param  	array	$tabMenu        If array with menu entries already loaded, we put this array here (in most cases, it's empty)
+ * @param  	array	$tabMenu        If array with menu entries already loaded, we put this array here (in most cases, it's empty). For eldy menu, it contains menu entries loaded from database.
  * @param	Menu	$menu			Object Menu to return back list of menu entries
  * @param	int		$noout			1=Disable output (Initialise &$menu only).
  * @param	string	$mode			'top', 'topnb', 'left', 'jmobile'
@@ -454,6 +454,7 @@ function print_eldy_menu($db, $atarget, $type_user, &$tabMenu, &$menu, $noout = 
 	$num = count($newTabMenu);
 	for ($i = 0; $i < $num; $i++)
 	{
+		//var_dump($type_user.' '.$newTabMenu[$i]['url'].' '.$showmode.' '.$newTabMenu[$i]['perms']);
 		$idsel = (empty($newTabMenu[$i]['mainmenu']) ? 'none' : $newTabMenu[$i]['mainmenu']);
 
 		$showmode = isVisibleToUserType($type_user, $newTabMenu[$i], $listofmodulesforexternal);
@@ -1008,7 +1009,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 			if (!empty($conf->facture->enabled))
 			{
 				$langs->load("bills");
-				$newmenu->add("/compta/facture/list.php?leftmenu=customers_bills", $langs->trans("BillsCustomers"), 0, $user->rights->facture->lire, '', $mainmenu, 'customers_bills');
+				$newmenu->add("/compta/facture/index.php?leftmenu=customers_bills", $langs->trans("BillsCustomers"), 0, $user->rights->facture->lire, '', $mainmenu, 'customers_bills');
 				$newmenu->add("/compta/facture/card.php?action=create", $langs->trans("NewBill"), 1, $user->rights->facture->creer);
 				$newmenu->add("/compta/facture/list.php?leftmenu=customers_bills", $langs->trans("List"), 1, $user->rights->facture->lire, '', $mainmenu, 'customers_bills_list');
 
@@ -1036,7 +1037,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 			if (!empty($conf->societe->enabled) && !empty($conf->supplier_invoice->enabled))
 			{
 				$langs->load("bills");
-				$newmenu->add("/fourn/facture/list.php?leftmenu=suppliers_bills", $langs->trans("BillsSuppliers"), 0, $user->rights->fournisseur->facture->lire, '', $mainmenu, 'suppliers_bills');
+				$newmenu->add("/fourn/facture/index.php?leftmenu=suppliers_bills", $langs->trans("BillsSuppliers"), 0, $user->rights->fournisseur->facture->lire, '', $mainmenu, 'suppliers_bills');
 				$newmenu->add("/fourn/facture/card.php?leftmenu=suppliers_bills&amp;action=create", $langs->trans("NewBill"), 1, $user->rights->fournisseur->facture->creer, '', $mainmenu, 'suppliers_bills_create');
 				$newmenu->add("/fourn/facture/list.php?leftmenu=suppliers_bills", $langs->trans("List"), 1, $user->rights->fournisseur->facture->lire, '', $mainmenu, 'suppliers_bills_list');
 
@@ -1091,7 +1092,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 				global $mysoc;
 
 				$permtoshowmenu = ((!empty($conf->tax->enabled) && $user->rights->tax->charges->lire) || (!empty($conf->salaries->enabled) && !empty($user->rights->salaries->read)) || (!empty($conf->loan->enabled) && $user->rights->loan->read) || (!empty($conf->banque->enabled) && $user->rights->banque->lire));
-				$newmenu->add("/compta/charges/index.php?leftmenu=tax&amp;mainmenu=billing", $langs->trans("MenuSpecialExpenses"), 0, $permtoshowmenu, '', $mainmenu, 'tax');
+				$newmenu->add("/compta/charges/index.php?leftmenu=tax&amp;mainmenu=billing", $langs->trans("MenuTaxesAndSpecialExpenses"), 0, $permtoshowmenu, '', $mainmenu, 'tax');
 
 				// Social contributions
 				if (!empty($conf->tax->enabled))
@@ -1146,11 +1147,11 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 				if (!empty($conf->salaries->enabled))
 				{
 					$langs->load("salaries");
-					$newmenu->add("/salaries/list.php?leftmenu=tax_salary&amp;mainmenu=billing", $langs->trans("Salaries"), 1, $user->rights->salaries->read, '', $mainmenu, 'tax_salary');
+					$newmenu->add("/salaries/list.php?leftmenu=tax_salary&amp;mainmenu=billing", $langs->trans("Salaries"), 0, $user->rights->salaries->read, '', $mainmenu, 'tax_salary');
 					if ($usemenuhider || empty($leftmenu) || preg_match('/^tax_salary/i', $leftmenu)) {
-                        $newmenu->add("/salaries/card.php?leftmenu=tax_salary&action=create", $langs->trans("NewPayment"), 2, $user->rights->salaries->write);
-					    $newmenu->add("/salaries/list.php?leftmenu=tax_salary", $langs->trans("Payments"), 2, $user->rights->salaries->read);
-                        $newmenu->add("/salaries/stats/index.php?leftmenu=tax_salary", $langs->trans("Statistics"), 2, $user->rights->salaries->read);
+                        $newmenu->add("/salaries/card.php?leftmenu=tax_salary&action=create", $langs->trans("NewPayment"), 1, $user->rights->salaries->write);
+					    $newmenu->add("/salaries/list.php?leftmenu=tax_salary", $langs->trans("Payments"), 1, $user->rights->salaries->read);
+                        $newmenu->add("/salaries/stats/index.php?leftmenu=tax_salary", $langs->trans("Statistics"), 1, $user->rights->salaries->read);
                     }
 				}
 
@@ -1158,9 +1159,9 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 				if (!empty($conf->loan->enabled))
 				{
 					$langs->load("loan");
-					$newmenu->add("/loan/list.php?leftmenu=tax_loan&amp;mainmenu=billing", $langs->trans("Loans"), 1, $user->rights->loan->read, '', $mainmenu, 'tax_loan');
+					$newmenu->add("/loan/list.php?leftmenu=tax_loan&amp;mainmenu=billing", $langs->trans("Loans"), 0, $user->rights->loan->read, '', $mainmenu, 'tax_loan');
 					if ($usemenuhider || empty($leftmenu) || preg_match('/^tax_loan/i', $leftmenu)) {
-                        $newmenu->add("/loan/card.php?leftmenu=tax_loan&action=create", $langs->trans("NewLoan"), 2, $user->rights->loan->write);
+                        $newmenu->add("/loan/card.php?leftmenu=tax_loan&action=create", $langs->trans("NewLoan"), 1, $user->rights->loan->write);
                         //$newmenu->add("/loan/payment/list.php?leftmenu=tax_loan",$langs->trans("Payments"),2,$user->rights->loan->read);
                     }
 				}
@@ -1169,10 +1170,10 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 				if (!empty($conf->banque->enabled) && empty($conf->global->BANK_USE_OLD_VARIOUS_PAYMENT))
 				{
 					$langs->load("banks");
-					$newmenu->add("/compta/bank/various_payment/list.php?leftmenu=tax_various&amp;mainmenu=billing", $langs->trans("MenuVariousPayment"), 1, $user->rights->banque->lire, '', $mainmenu, 'tax_various');
+					$newmenu->add("/compta/bank/various_payment/list.php?leftmenu=tax_various&amp;mainmenu=billing", $langs->trans("MenuVariousPayment"), 0, $user->rights->banque->lire, '', $mainmenu, 'tax_various');
 					if ($usemenuhider || empty($leftmenu) || preg_match('/^tax_various/i', $leftmenu)) {
-                        $newmenu->add("/compta/bank/various_payment/card.php?leftmenu=tax_various&action=create", $langs->trans("New"), 2, $user->rights->banque->modifier);
-                        $newmenu->add("/compta/bank/various_payment/list.php?leftmenu=tax_various", $langs->trans("List"), 2, $user->rights->banque->lire);
+                        $newmenu->add("/compta/bank/various_payment/card.php?leftmenu=tax_various&action=create", $langs->trans("New"), 1, $user->rights->banque->modifier);
+                        $newmenu->add("/compta/bank/various_payment/list.php?leftmenu=tax_various", $langs->trans("List"), 1, $user->rights->banque->lire);
                     }
 				}
 			}
@@ -1426,7 +1427,10 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
                     $newmenu->add("/compta/stats/cabyuser.php?leftmenu=report", $langs->trans("ByUsers"), 2, $user->rights->compta->resultat->lire);
                     $newmenu->add("/compta/stats/cabyprodserv.php?leftmenu=report", $langs->trans("ByProductsAndServices"), 2, $user->rights->compta->resultat->lire);
                     $newmenu->add("/compta/stats/byratecountry.php?leftmenu=report", $langs->trans("ByVatRate"), 2, $user->rights->compta->resultat->lire);
-
+					//Achats
+					$newmenu->add("/compta/stats/supplier_turnover.php?leftmenu=accountancy_report", $langs->trans("ReportPurchaseTurnover"), 1, $user->rights->compta->resultat->lire);
+					$newmenu->add("/compta/stats/supplier_turnover_by_thirdparty.php?leftmenu=accountancy_report", $langs->trans("ByCompanies"), 2, $user->rights->compta->resultat->lire);
+					$newmenu->add("/compta/stats/supplier_turnover_by_prodserv.php?leftmenu=accountancy_report", $langs->trans("ByProductsAndServices"), 2, $user->rights->compta->resultat->lire);
                     // Journaux
                     $newmenu->add("/compta/journal/sellsjournal.php?leftmenu=report", $langs->trans("SellsJournal"), 1, $user->rights->compta->resultat->lire, '', '', '', 50);
                     $newmenu->add("/compta/journal/purchasesjournal.php?leftmenu=report", $langs->trans("PurchasesJournal"), 1, $user->rights->compta->resultat->lire, '', '', '', 51);
@@ -1480,7 +1484,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 			// Direct debit order
 			if (!empty($conf->prelevement->enabled))
 			{
-				$newmenu->add("/compta/prelevement/index.php?leftmenu=withdraw&amp;mainmenu=bank", $langs->trans("StandingOrders"), 0, $user->rights->prelevement->bons->lire, '', $mainmenu, 'withdraw');
+				$newmenu->add("/compta/prelevement/index.php?leftmenu=withdraw&amp;mainmenu=bank", $langs->trans("PaymentByDirectDebit"), 0, $user->rights->prelevement->bons->lire, '', $mainmenu, 'withdraw');
 
 				if ($usemenuhider || empty($leftmenu) || $leftmenu == "withdraw") {
 				    $newmenu->add("/compta/prelevement/create.php?mainmenu=bank", $langs->trans("NewStandingOrder"), 1, $user->rights->prelevement->bons->creer);
@@ -1596,6 +1600,7 @@ function print_left_eldy_menu($db, $menu_array_before, $menu_array_after, &$tabM
 
                 $newmenu->add("/product/stock/massstockmove.php", $langs->trans("MassStockTransferShort"), 1, $user->rights->stock->mouvement->creer);
                 if ($conf->supplier_order->enabled) $newmenu->add("/product/stock/replenish.php", $langs->trans("Replenishment"), 1, $user->rights->stock->mouvement->creer && $user->rights->fournisseur->lire);
+                $newmenu->add("/product/stock/stockatdate.php", $langs->trans("StockAtDate"), 1, $user->rights->produit->lire && $user->rights->stock->lire && $conf->global->MAIN_FEATURES_LEVEL >= 2);
 
                 // Categories for warehouses
                 if (!empty($conf->categorie->enabled))

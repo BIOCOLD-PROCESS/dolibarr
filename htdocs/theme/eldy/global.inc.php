@@ -148,12 +148,15 @@ table.liste th.wrapcolumntitle.liste_titre:not(.maxwidthsearch), table.liste td.
 .liste_titre input[name=search_day_date_when], .liste_titre input[name=search_month_date_when], .liste_titre input[name=search_year_date_when],
 .liste_titre input[name=search_dtstartday], .liste_titre input[name=search_dtendday], .liste_titre input[name=search_dtstartmonth], .liste_titre input[name=search_dtendmonth],
 select#date_startday, select#date_startmonth, select#date_endday, select#date_endmonth, select#reday, select#remonth,
-input[name=duration_value]
+input[name=duration_value], input[name=durationhour]
 {
-	margin-right: 4px;
+	margin-right: 4px !important;
 }
 input[type=submit], input[type=submit]:hover {
 	margin-left: 5px;
+}
+input[type=checkbox], input[type=radio] {
+    margin: 0 3px 0 3px;
 }
 input, input.flat, form.flat select, select, select.flat, .dataTables_length label select {
 	border: none;
@@ -171,15 +174,15 @@ input {
 	padding-left: 5px;
 }
 select {
-	padding-top: 4px;
+	padding-top: 5px;
 	padding-right: 4px;
-	padding-bottom: 3px;
+	padding-bottom: 5px;
 	padding-left: 2px;
 }
 input, select {
-	margin-left:0px;
-	margin-bottom:1px;
-	margin-top:1px;
+	margin-left: 0px;
+	margin-bottom: 1px;
+	margin-top: 1px;
 }
 #mainbody input.button:not(.buttongen):not(.bordertransp) {
 	background: var(--butactionbg);
@@ -193,6 +196,7 @@ input, select {
 input.button:focus {
 	border-bottom: 0;
 }
+
 input.button.massactionconfirmed {
     margin: 4px;
 }
@@ -419,8 +423,8 @@ hr { border: 0; border-top: 1px solid #ccc; }
 .tabBar hr { margin-top: 20px; margin-bottom: 17px; }
 
 .button:not(.bordertransp):not(.buttonpayment), .buttonDelete:not(.bordertransp):not(.buttonpayment) {
-	margin-bottom: 0;
-	margin-top: 0;
+	margin-bottom: 3px;
+	margin-top: 3px;
 	margin-left: 5px;
 	margin-right: 5px;
 	font-family: <?php print $fontlist ?>;
@@ -490,9 +494,16 @@ div.floatright
 {
     float:<?php print $right; ?>;
 }
+.block
+{
+	display:block;
+}
 .inline-block
 {
 	display:inline-block;
+}
+.largenumber {
+    font-size: 1.4em;
 }
 
 th .button {
@@ -613,10 +624,10 @@ textarea.centpercent {
 	padding-<?php print $right; ?>: 2px;
 }
 .paddingtop {
-	padding-bottom: 4px;
+	padding-top: 4px;
 }
 .paddingtop2 {
-	padding-bottom: 2px;
+	padding-top: 2px;
 }
 .paddingbottom {
 	padding-bottom: 4px;
@@ -670,10 +681,12 @@ body[class*="colorblind-"] .text-success{
     color : <?php print $textDanger; ?>
 }
 
-.editfielda span.fa-pencil-alt, .editfielda span.fa-pencil-ruler, .editfielda span.fa-trash, .editfieldlang {
+.editfielda span.fa-pencil-alt, .editfielda span.fa-pencil-ruler, .editfielda span.fa-trash, .editfielda span.fa-crop,
+.editfieldlang {
     color: #ccc !important;
 }
-.editfielda span.fa-pencil-alt:hover, .editfielda span.fa-pencil-ruler:hover, .editfielda span.fa-trash:hover, .editfieldlang:hover {
+.editfielda span.fa-pencil-alt:hover, .editfielda span.fa-pencil-ruler:hover, .editfielda span.fa-trash:hover, .editfielda span.fa-crop:hover,
+.editfieldlang:hover {
     color: var(--colortexttitle) !important;
 }
 .fawidth30 {
@@ -685,7 +698,9 @@ body[class*="colorblind-"] .text-success{
 
 .fa-toggle-on, .fa-toggle-off { font-size: 2em; }
 .websiteselectionsection .fa-toggle-on, .websiteselectionsection .fa-toggle-off,
-.asetresetmodule .fa-toggle-on, .asetresetmodule .fa-toggle-off {
+.asetresetmodule .fa-toggle-on, .asetresetmodule .fa-toggle-off,
+.tdwebsitesearchresult .fa-toggle-on, .tdwebsitesearchresult .fa-toggle-off
+ {
 	font-size: 1.5em; vertical-align: text-bottom;
 }
 
@@ -1030,6 +1045,7 @@ table[summary="list_of_modules"] .fa-cog {
 /* ============================================================================== */
 
 .clearboth  { clear:both; }
+
 .hideobject { display: none; }
 .minwidth50  { min-width: 50px; }
 .minwidth75  { min-width: 75px; }
@@ -1068,6 +1084,7 @@ table[summary="list_of_modules"] .fa-cog {
 .maxwidth25  { max-width: 25px; }
 .maxwidth50  { max-width: 50px; }
 .maxwidth75  { max-width: 75px; }
+.maxwidthdate  { max-width: 80px; }
 .maxwidth100 { max-width: 100px; }
 .maxwidth125 { max-width: 125px; }
 .maxwidth150 { max-width: 150px; }
@@ -1078,6 +1095,7 @@ table[summary="list_of_modules"] .fa-cog {
 .maxwidth50imp  { max-width: 50px !important; }
 .maxwidth75imp  { max-width: 75px !important; }
 .minheight20 { min-height: 20px; }
+.minheight30 { min-height: 30px; }
 .minheight40 { min-height: 40px; }
 .titlefieldcreate { width: 20%; }
 .titlefield       { /* width: 25%; */ width: 250px; }
@@ -1156,9 +1174,14 @@ table[summary="list_of_modules"] .fa-cog {
 	}
 
 	select.minwidth100imp, select.minwidth100, select.minwidth200, .widthcentpercentminusx {
-		width: calc(100% - 30px) !important;
+		width: calc(100% - 50px) !important;
 		display: inline-block;
 	}
+
+	.clearbothonsmartphone { clear: both; display: block; }
+	/*img.photoref, div.photoref {
+		box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.2);
+	}*/
 }
 
 /* Force values for small screen 570 */
@@ -1271,9 +1294,9 @@ table[summary="list_of_modules"] .fa-cog {
 	    padding-bottom: 5px;
 	}
     img.photoref, div.photoref {
-    	border: none;
+    	border: 1px solid rgba(0, 0, 0, 0.2);
+    	box-shadow: none;
         -webkit-box-shadow: none;
-        box-shadow: none;
         padding: 4px;
     	height: 20px;
     	width: 20px;
@@ -1370,7 +1393,7 @@ td.showDragHandle {
 
 .side-nav {
 	display: table-cell;
-	border-<?php echo $right; ?>: 1px solid #d0d0d0;
+	border-<?php echo $right; ?>: 1px solid #E0E0E0;
 	box-shadow: 3px 0 6px -2px #eee;
 	background: var(--colorbackvmenu1);
 	transition: left 0.5s ease;
@@ -1719,7 +1742,7 @@ div.heightref {
 	min-height: 80px;
 }
 div.divphotoref {
-	padding-<?php echo $right; ?>: 20px;
+	padding-<?php echo $right; ?>: 30px;
 }
 div.paginationref {
 	padding-bottom: 10px;
@@ -1966,7 +1989,11 @@ div.mainmenu {
 	margin-left: 0px;
 	min-width: 40px;
 }
+
 a.tmenuimage:focus, .mainmenu.topmenuimage:focus {
+    outline: none;
+}
+button.ui-button.ui-corner-all.ui-widget:focus {
     outline: none;
 }
 
@@ -2771,6 +2798,9 @@ a.tab:link, a.tab:visited, a.tab:hover, a.tab#active {
     text-decoration: none;
     white-space: nowrap;
 
+	/*border-right: 1px solid #ddd;
+	border-left: 1px solid #ddd;
+	border-top: 1px solid #ddd; */
 	border-right: 1px solid transparent;
 	border-left: 1px solid transparent;
 	border-top: 1px solid transparent;
@@ -2968,22 +2998,22 @@ td.border, div.tagtable div div.border {
 }
 table.liste, table.noborder, table.formdoc, div.noborder {
 	width: 100%;
-
 	border-collapse: separate !important;
 	border-spacing: 0px;
-
 	border-top-width: <?php echo $borderwidth ?>px;
 	border-top-color: rgb(<?php echo $colortopbordertitle1 ?>);
 	border-top-style: solid;
-	/* border-top-width: 2px;
-	border-top-color: var(--colorbackhmenu1);
-	border-top-style: solid; */
-
-	/*border-bottom-width: 1px;
-	border-bottom-color: rgb(<?php echo $colortopbordertitle1 ?>);
-	border-bottom-style: solid;*/
-
 	margin: 0px 0px 5px 0px;
+
+	/*width: calc(100% - 7px);
+    border-collapse: separate !important;
+    border-spacing: 0px;
+    border-top-width: 0px;
+    border-top-color: rgb(215,215,215);
+    border-top-style: solid;
+    margin: 0px 0px 5px 2px;
+    box-shadow: 1px 1px 5px #ddd;
+    */
 }
 #tablelines {
 	border-bottom-width: 1px;
@@ -3099,7 +3129,7 @@ table.listwithfilterbefore {
 
 /* Pagination */
 div.refidpadding  {
-	padding-top: 3px;
+	/* padding-top: 3px; */
 }
 div.refid  {
 	font-weight: bold;
@@ -3141,7 +3171,7 @@ div.pagination li {
   display: inline-block;
   padding-left: 0px;
   padding-right: 0px;
-  padding-top: 10px;
+  /* padding-top: 10px; */
   padding-bottom: 5px;
   font-size: 1.1em;
 }
@@ -3615,6 +3645,11 @@ ul.noborder li:nth-child(even):not(.liste_titre) {
     padding-bottom: 2px;
     width: 118px;
 }
+
+.boxtable:not(.widgetstats) td.tdboxstats .boxstats {
+	box-shadow: 1px 1px 8px var(--colorboxstatsborder);
+}
+
 .tabBar .fichehalfright .boxstats {
     padding-top: 8px;
     padding-bottom: 4px;
@@ -3988,14 +4023,19 @@ div.titre {
 	padding-top: 5px;
     padding-bottom: 5px;
 }
-.secondary, div.titre {
+div.fiche > table.table-fiche-title:first-of-type div {
+    color: var(--colortexttitlenotab);
+    /* font-weight: 600; */
+}
+div.titre {
+    color: var(--colortexttitlenotab);
+}
+
+.secondary {
     color: var(--colortexttitlenotab);
 }
 .tertiary {
 	color: var(--colortexttitlenotab2);
-}
-table.table-fiche-title:first-of-type div {
-    color: var(--colortexttitlenotab);
 }
 
 table.table-fiche-title .col-title div.titre{
@@ -4301,7 +4341,7 @@ span[phptag] {
 }
 .websitebar .button, .websitebar .buttonDelete
 {
-	padding: 2px 5px 3px 5px !important;
+	padding: 4px 5px 4px 5px !important;
 	margin: 2px 4px 2px 4px  !important;
     line-height: normal;
     background: #f5f5f5 !important;
@@ -4369,6 +4409,7 @@ span.websitebuttonsitepreviewdisabled img, a.websitebuttonsitepreviewdisabled im
 table.cal_month    { border-spacing: 0px;  }
 table.cal_month td:first-child  { border-left: 0px; }
 table.cal_month td:last-child   { border-right: 0px; }
+table.cal_month td { padding-left: 1px !important; padding-right: 1px !important; }
 .cal_current_month { border-top: 0; border-left: solid 1px #E0E0E0; border-right: 0; border-bottom: solid 1px #E0E0E0; }
 .cal_current_month_peruserleft { border-top: 0; border-left: solid 2px #6C7C7B; border-right: 0; border-bottom: solid 1px #E0E0E0; }
 .cal_current_month_oneday { border-right: solid 1px #E0E0E0; }
@@ -4385,11 +4426,17 @@ table.cal_month td:last-child   { border-right: 0px; }
 .cal_today_peruser_peruserleft { background: #FDFDF0; border-left: solid 2px #6C7C7B; border-right: solid 1px #E0E0E0; border-bottom: solid 1px #E0E0E0; padding-<?php print $left; ?>: 2px; padding-<?php print $right; ?>: 1px; padding-top: 0px; padding-bottom: 0px; }
 .cal_past          { }
 .cal_peruser       { padding-top: 0 !important; padding-bottom: 0 !important; padding-<?php print $left; ?>: 1px !important; padding-<?php print $right; ?>: 1px !important; }
-.cal_impair        { background: #F8F8F8; }
+.cal_impair        {
+	background: linear-gradient(bottom, var(--colorbacklinepair1) 85%, var(--colorbacklinepair2) 100%);
+    background: -o-linear-gradient(bottom, var(--colorbacklinepair1) 85%, var(--colorbacklinepair2) 100%);
+    background: -moz-linear-gradient(bottom, var(--colorbacklinepair1) 85%, var(--colorbacklinepair2) 100%);
+    background: -webkit-linear-gradient(bottom, var(--colorbacklinepair1) 85%, var(--colorbacklinepair2) 100%);
+    /*  background: -ms-linear-gradient(bottom, var(--colorbacklinepair1) 85%, var(--colorbacklinepair2) 100%); */
+}
 .cal_today_peruser_impair { background: #F8F8F0; }
 .peruser_busy      { }
 .peruser_notbusy   { opacity: 0.5; }
-table.cal_event    { border: none; border-collapse: collapse; margin-bottom: 1px; min-height: 20px; }
+table.cal_event    { border: none; border-collapse: collapse; margin-bottom: 1px; min-height: 20px; filter: saturate(0.8); border-radius: 3px; }
 table.cal_event td { border: none; padding-<?php print $left; ?>: 2px; padding-<?php print $right; ?>: 2px; padding-top: 0px; padding-bottom: 0px; }
 table.cal_event td.cal_event { padding: 4px 4px !important; }
 table.cal_event td.cal_event_right { padding: 4px 4px !important; }
@@ -4400,6 +4447,7 @@ table.cal_event td.cal_event_right { padding: 4px 4px !important; }
 .cal_event_busy a:hover { color: #111111; font-weight: normal !important; color:rgba(255,255,255,.75); }
 .cal_event_busy      { }
 .cal_peruserviewname { max-width: 140px; height: 22px; }
+table.cal_month tr td table.nobordernopadding tr td { padding: 0 2px 0 2px; }
 
 .calendarviewcontainertr { height: 100px; }
 
@@ -4480,10 +4528,10 @@ td.cal_other_month {
 /* ============================================================================== */
 
 /* CSS for treeview */
-.treeview ul { background-color: transparent !important; margin-top: 4px; padding-top: 4px !important; }
+.treeview ul { background-color: transparent !important; margin-bottom: 4px !important; margin-top: 0 !important; padding-top: 4px !important; }
 .treeview li { background-color: transparent !important; padding: 0 0 0 16px !important; min-height: 26px; }
 .treeview .hover { color: var(--colortextlink) !important; text-decoration: underline !important; }
-
+.treeview .hitarea { margin-top: 3px; }
 
 
 /* ============================================================================== */
@@ -5371,7 +5419,7 @@ span#select2-boxbookmark-container, span#select2-boxcombo-container {
 
 /* To emulate select 2 style */
 .select2-container-multi-dolibarr .select2-choices-dolibarr .select2-search-choice-dolibarr {
-  padding: 2px 5px 1px 5px;
+  padding: 3px 5px 2px 5px;
   margin: 0 0 2px 3px;
   position: relative;
   line-height: 13px;
@@ -5427,7 +5475,8 @@ span.noborderoncategories a, li.noborderoncategories a {
 	vertical-align: top;
 }
 span.noborderoncategories {
-	padding: 3px 5px 0px 5px;
+	padding: 4px 5px 0px 5px;
+	display: inline-block;
 }
 .categtextwhite, .treeview .categtextwhite.hover {
 	color: #fff !important;

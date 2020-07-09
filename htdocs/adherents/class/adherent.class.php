@@ -2180,7 +2180,7 @@ class Adherent extends CommonObject
 		if ($mode == 'expired') {
 			$sql .= " AND a.statut = 1";
 			$sql .= " AND a.entity IN (".getEntity('adherent').")";
-			$sql .= " AND ((a.datefin IS NULL or a.datefin < '".$this->db->idate($now)."') AND t.subscription = 1)";
+			$sql .= " AND ((a.datefin IS NULL or a.datefin < '".$this->db->idate($now)."') AND t.subscription = '1')";
 		} elseif ($mode == 'shift') {
 			$sql .= " AND a.statut = -1";
 			$sql .= " AND a.entity IN (".getEntity('adherent').")";
@@ -2747,7 +2747,7 @@ class Adherent extends CommonObject
 								$actioncomm->datef = $now;
 								$actioncomm->percentage = -1; // Not applicable
 								$actioncomm->socid = $adherent->thirdparty->id;
-								$actioncomm->contactid = 0;
+								$actioncomm->contact_id = 0;
 								$actioncomm->authorid = $user->id; // User saving action
 								$actioncomm->userownerid = $user->id; // Owner of action
 								// Fields when action is en email (content should be added into note)

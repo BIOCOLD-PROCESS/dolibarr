@@ -130,18 +130,9 @@ class User extends CommonObject
     public $datem;
 
 	//! If this is defined, it is an external user
-	/**
-	 * @deprecated
-	 * @see $socid
-	 */
-	public $societe_id;
-	/**
-	 * @deprecated
-	 * @see $contactid
-	 */
-	public $contact_id;
 	public $socid;
-	public $contactid;
+	//! If this is defined, it is a user created from a contact
+	public $contact_id;
 
 	/**
      * @var int ID
@@ -162,6 +153,8 @@ class User extends CommonObject
 
 	public $datelastlogin;
 	public $datepreviouslogin;
+	public $datestartvalidity;
+	public $dateedvalidity;
 	public $photo;
 	public $lang;
 
@@ -177,7 +170,7 @@ class User extends CommonObject
 
 	public $users = array(); // To store all tree of users hierarchy
 	public $parentof; // To store an array of all parents for all ids.
-	private $cache_childids;
+	private $cache_childids;	// Cache array of already loaded childs
 
 	public $accountancy_code; // Accountancy code in prevision of the complete accountancy module
 
@@ -270,6 +263,8 @@ class User extends CommonObject
 		$sql .= " u.tms as datem,";
 		$sql .= " u.datelastlogin as datel,";
 		$sql .= " u.datepreviouslogin as datep,";
+		$sql .= " u.datestartvalidity,";
+		$sql .= " u.dateendvalidity,";
 		$sql .= " u.photo as photo,";
 		$sql .= " u.openid as openid,";
 		$sql .= " u.accountancy_code,";
@@ -388,11 +383,11 @@ class User extends CommonObject
 				$this->datem				= $this->db->jdate($obj->datem);
 				$this->datelastlogin = $this->db->jdate($obj->datel);
 				$this->datepreviouslogin = $this->db->jdate($obj->datep);
+				$this->datestartvalidity = $this->db->jdate($obj->datestartvalidity);
+				$this->dateendvalidity = $this->db->jdate($obj->dateendvalidity);
 
-				$this->societe_id           = $obj->fk_soc; // deprecated
-				$this->contact_id           = $obj->fk_socpeople; // deprecated
 				$this->socid                = $obj->fk_soc;
-				$this->contactid            = $obj->fk_socpeople;
+				$this->contact_id           = $obj->fk_socpeople;
 				$this->fk_member            = $obj->fk_member;
 				$this->fk_user = $obj->fk_user;
                 $this->fk_user_expense_validator = $obj->fk_user_expense_validator;
@@ -1044,9 +1039,9 @@ class User extends CommonObject
 		}
 
 		// If contact, remove link
-		if ($this->contactid > 0 || $this->contact_id > 0)
+		if ($this->contact_id > 0)
 		{
-			$sql = "UPDATE ".MAIN_DB_PREFIX."socpeople SET fk_user_creat = null WHERE rowid = ".(($this->contactid > 0) ? $this->contactid : $this->contact_id);
+			$sql = "UPDATE ".MAIN_DB_PREFIX."socpeople SET fk_user_creat = null WHERE rowid = ".$this->contact_id;
 			if (!$error && !$this->db->query($sql))
 			{
 				$error++;
@@ -1174,15 +1169,7 @@ class User extends CommonObject
 						return -5;
 					}
 
-					// Update minor fields
-					$result = $this->update($user, 1, 1);
-					if ($result < 0)
-					{
-						$this->db->rollback();
-						return -4;
-					}
-
-					if (!empty($conf->global->STOCK_USERSTOCK_AUTOCREATE))
+					if (! empty($conf->global->MAIN_DEFAULT_WAREHOUSE_USER) && !empty($conf->global->STOCK_USERSTOCK_AUTOCREATE))
 					{
 						require_once DOL_DOCUMENT_ROOT.'/product/stock/class/entrepot.class.php';
 						$langs->load("stocks");
@@ -1192,7 +1179,17 @@ class User extends CommonObject
 						$entrepot->description = $langs->trans("ThisWarehouseIsPersonalStock", $this->getFullName($langs));
 						$entrepot->statut = 1;
 						$entrepot->country_id = $mysoc->country_id;
-						$entrepot->create($user);
+						$warehouseid = $entrepot->create($user);
+
+						$this->fk_warehouse = $warehouseid;
+					}
+
+					// Update minor fields
+					$result = $this->update($user, 1, 1);
+					if ($result < 0)
+					{
+						$this->db->rollback();
+						return -4;
 					}
 
 					if (!$notrigger)
@@ -1649,8 +1646,7 @@ class User extends CommonObject
 
 					require_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
 
-					// This user is linked with a contact, so we also update contact information
-					// if this is an update.
+					// This user is linked with a contact, so we also update contact information if this is an update.
 					$tmpobj = new Contact($this->db);
 					$result = $tmpobj->fetch($this->contact_id);
 
@@ -2329,7 +2325,7 @@ class User extends CommonObject
 		  	$paddafterimage = '';
 		  	if (abs($withpictoimg) == 1) $paddafterimage = 'style="margin-'.($langs->trans("DIRECTION") == 'rtl' ? 'left' : 'right').': 3px;"';
 			// Only picto
-			if ($withpictoimg > 0) $picto = '<!-- picto user --><span class="nopadding userimg'.($morecss ? ' '.$morecss : '').'">'.img_object('', 'user', $paddafterimage.' '.($notooltip ? '' : 'class="classfortooltip"'), 0, 0, $notooltip ? 0 : 1).'</span>';
+			if ($withpictoimg > 0) $picto = '<!-- picto user --><span class="nopadding userimg'.($morecss ? ' '.$morecss : '').'">'.img_object('', 'user', $paddafterimage.' '.($notooltip ? '' : 'class="paddingright classfortooltip"'), 0, 0, $notooltip ? 0 : 1).'</span>';
 			// Picto must be a photo
 			else $picto = '<!-- picto photo user --><span class="nopadding userimg'.($morecss ? ' '.$morecss : '').'"'.($paddafterimage ? ' '.$paddafterimage : '').'>'.Form::showphoto('userphoto', $this, 0, 0, 0, 'userphoto'.($withpictoimg == -3 ? 'small' : ''), 'mini', 0, 1).'</span>';
 			$result .= $picto;
@@ -2641,8 +2637,6 @@ class User extends CommonObject
 		$this->datepreviouslogin = $now;
 		$this->statut = 1;
 
-		//$this->societe_id = 1;	For external users
-		//$this->contact_id = 1;	For external users
 		$this->entity = 1;
 	}
 

@@ -28,9 +28,9 @@ if (!defined('ISLOADEDBYSTEELSHEET')) die('Must be call by steelsheet'); ?>
 }
 .info-box-more {
     float: right;
-    top: 6px;
+    top: 5px;
     position: absolute;
-    right: 10px;
+    right: 8px;
 }
 
 .info-box small {
@@ -188,8 +188,7 @@ if (!defined('ISLOADEDBYSTEELSHEET')) die('Must be call by steelsheet'); ?>
 .info-box-title{
 	text-transform: uppercase;
 	font-weight: bold;
-	margin-bottom: 6px;
-	/* padding-bottom: 4px; */
+	margin-bottom: 3px;	/* not too much space so we can add another lines */
 }
 .info-box-text{
 	font-size: 0.92em;
@@ -228,20 +227,31 @@ if (GETPOSTISSET('THEME_SATURATE_RATIO')) $conf->global->THEME_SATURATE_RATIO = 
     <?php } ?>
 }
 
+.customer-back {
+	background-color: #99a17d !important;
+	color: #FFF !important;
+	padding: 2px;
+	margin: 2px;
+	border-radius: 3px;
+}
+.vendor-back {
+	background-color: #599caf !important;
+	color: #FFF !important;
+	padding: 2px;
+	margin: 2px;
+	border-radius: 3px;
+}
+
 .bg-infobox-project{
 	<?php echo $prefix; ?>color: #6c6aa8 !important;
 }
 .bg-infobox-action{
 	<?php echo $prefix; ?>color: #a47080 !important;
 }
-.bg-infobox-propal,
-.bg-infobox-facture,
-.bg-infobox-commande{
+.bg-infobox-propal, .bg-infobox-facture, .bg-infobox-commande {
 	<?php echo $prefix; ?>color: #99a17d !important;
 }
-.bg-infobox-supplier_proposal,
-.bg-infobox-invoice_supplier,
-.bg-infobox-order_supplier{
+.bg-infobox-supplier_proposal, .bg-infobox-invoice_supplier, .bg-infobox-order_supplier {
 	<?php echo $prefix; ?>color: #599caf !important;
 }
 .bg-infobox-contrat, .bg-infobox-ticket{
@@ -386,6 +396,16 @@ if (GETPOSTISSET('THEME_SATURATE_RATIO')) $conf->global->THEME_SATURATE_RATIO = 
 	min-width: 350px;
     max-width: 350px;
 }
+.info-box-title {
+	width: calc(100% - 20px);
+}
+@media only screen and (max-width: 767px) {
+	.info-box-module {
+		min-width: 260px;
+	}
+}
+
+
 .info-box-module .info-box-content {
 	height: 6.4em;
 }
